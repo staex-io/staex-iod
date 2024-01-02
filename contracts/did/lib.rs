@@ -3,6 +3,8 @@
 #[ink::contract]
 mod did {
 
+    use ink::prelude::string::String;
+
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
@@ -10,6 +12,22 @@ mod did {
     pub struct Did {
         /// Stores a single `bool` value on the storage.
         value: bool,
+    }
+
+    #[ink(event)]
+    pub struct BeforeFlipping {
+        from: AccountId,
+        field1: u64,
+        field2: String,
+        field3: String,
+    }
+
+    #[ink(event)]
+    pub struct AfterFlipping {
+        from: AccountId,
+        field1: u64,
+        field2: String,
+        field3: bool,
     }
 
     impl Did {
@@ -32,7 +50,20 @@ mod did {
         /// to `false` and vice versa.
         #[ink(message)]
         pub fn flip(&mut self) {
+            let from = self.env().caller();
+            self.env().emit_event(BeforeFlipping {
+                from,
+                field1: 123,
+                field2: String::from("asd"),
+                field3: String::from("dsa"),
+            });
             self.value = !self.value;
+            self.env().emit_event(AfterFlipping {
+                from,
+                field1: 312,
+                field2: String::from("qwe"),
+                field3: true,
+            });
         }
 
         /// Simply returns the current value of our `bool`.

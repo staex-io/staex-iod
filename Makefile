@@ -10,5 +10,5 @@ test:
 	cd contracts/did && cargo test --jobs 1 -- --nocapture --test-threads 1 $(name)
 	cd provisioner && cargo test --jobs 1 -- --nocapture --test-threads 1 $(name)
 
-build:
-	cd did && cargo contract build
+run_substrate:
+	substrate-contracts-node --no-telemetry --dev -d data-substrate
