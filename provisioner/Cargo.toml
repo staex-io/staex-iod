@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-subxt = { version = "0.33", features = [], default-features = true }
+subxt = { version = "0.33", features = ["substrate-compat"], default-features = true }
+subxt-signer = { version = "0.33", features = [], default-features = true }
 tokio = { version = "1.35", features = ["macros", "rt-multi-thread"], default-features = false }
 scale = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info ="*"
+toml = { version = "0.8", features = ["parse", "display"], default-features = false }
+serde = { version = "1.0", features = [], default-features = false }
+clap = { version = "4.4", features = ["std", "derive", "help"], default-features = false }
+contract-transcode = { version = "3.2.0", features = [], default-features = true } # todo: false
+pallet-contracts-primitives = "29.0.0"
+sp-weights = "26.0.0"

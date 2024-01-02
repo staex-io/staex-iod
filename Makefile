@@ -11,4 +11,5 @@ test:
 	cd provisioner && cargo test --jobs 1 -- --nocapture --test-threads 1 $(name)
 
 run_substrate:
+	# substrate-contracts-node --no-telemetry --dev -d data-substrate -l info
 	substrate-contracts-node --no-telemetry --dev -d data-substrate

@@ -50,6 +50,7 @@ mod did {
         /// to `false` and vice versa.
         #[ink(message)]
         pub fn flip(&mut self) {
+            ink::env::debug_println!("flip method executed");
             let from = self.env().caller();
             self.env().emit_event(BeforeFlipping {
                 from,
@@ -69,6 +70,7 @@ mod did {
         /// Simply returns the current value of our `bool`.
         #[ink(message)]
         pub fn get(&self) -> bool {
+            ink::env::debug_println!("get method executed");
             self.value
         }
     }
