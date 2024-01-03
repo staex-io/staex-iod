@@ -9,13 +9,10 @@ The goal of this project is to create a Web3 IoT data infrastructure with a stab
 ```shell
 # From project root folder.
 rm -rf data-substrate ; make run_substrate
+# From another terminal session.
 cd contracts
 make deploy name=did
-# Get contract address from output.
-cd did
-cargo contract call --contract <address> --message flip --suri //Alice -x --skip-confirm
-cd ../../provisioner
-cargo run
-cd ..
+cd ../provisioner
+cargo run -- run
 ```
 

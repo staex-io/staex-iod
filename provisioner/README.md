@@ -1,1 +1,5 @@
 # Provisioner
+
+```shell
+cargo run --
+```
