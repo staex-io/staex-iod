@@ -2,23 +2,28 @@ use std::fmt::Debug;
 
 use clap::{Parser, Subcommand};
 use contract_transcode::{ContractMessageTranscoder, Value};
+use pallet_contracts_primitives::ContractExecResult;
 use scale::DecodeAll;
-use scale::{Compact, Encode};
+use scale::Encode;
 use subxt::backend::legacy::LegacyRpcMethods;
 use subxt::backend::rpc::RpcClient;
 use subxt::error::{RpcError, TransactionError};
-use subxt::ext::scale_encode::EncodeAsType;
+use subxt::events::Events;
+use subxt::tx::TxPayload;
 use subxt::tx::{Signer, TxStatus};
 use subxt::utils::MultiAddress;
 use subxt::{
-    backend::rpc,
-    config::{substrate::H256, ExtrinsicParams},
-    rpc_params,
-    utils::AccountId32,
-    OnlineClient, PolkadotConfig,
+    backend::rpc, config::substrate::H256, rpc_params, utils::AccountId32, OnlineClient,
+    PolkadotConfig,
 };
-use subxt::{tx, Config};
 use subxt_signer::sr25519::dev;
+
+use crate::did::api::runtime_apis::contracts_api::types::Call;
+use crate::did::api::runtime_types::contracts_node_runtime::RuntimeEvent;
+use crate::did::api::runtime_types::frame_system::EventRecord;
+use crate::did::api::runtime_types::pallet_contracts::pallet::Event;
+use crate::did::api::runtime_types::sp_weights::weight_v2::Weight;
+use crate::did::api::TransactionApi;
 
 mod did;
 
@@ -27,16 +32,16 @@ type Error = Box<dyn std::error::Error>;
 type Balance = u128;
 
 #[repr(u8)]
-enum Event {
+enum DIDEvent {
     BeforeFlipping = 0,
     AfterFlipping = 1,
 }
 
-impl Event {
-    fn from(raw: u8) -> Event {
+impl DIDEvent {
+    fn from(raw: u8) -> DIDEvent {
         match raw {
-            0 => Event::BeforeFlipping,
-            1 => Event::AfterFlipping,
+            0 => DIDEvent::BeforeFlipping,
+            1 => DIDEvent::AfterFlipping,
             _ => unimplemented!(),
         }
     }
@@ -56,42 +61,6 @@ struct AfterFlipping {
     _field1: u64,
     _field2: String,
     _field3: bool,
-}
-
-#[derive(scale::Encode)]
-struct ContractCallArgs {
-    origin: <PolkadotConfig as Config>::AccountId,
-    dest: <PolkadotConfig as Config>::AccountId,
-    value: Balance,
-    gas_limit: Option<Weight>,
-    storage_deposit_limit: Option<Balance>,
-    input_data: Vec<u8>,
-}
-
-#[derive(Debug, EncodeAsType, scale::Encode)]
-#[encode_as_type(crate_path = "subxt::ext::scale_encode")]
-struct Weight {
-    #[codec(compact)]
-    ref_time: u64,
-    #[codec(compact)]
-    proof_size: u64,
-}
-
-#[derive(EncodeAsType)]
-#[encode_as_type(crate_path = "subxt::ext::scale_encode")]
-struct Call {
-    dest: MultiAddress<<PolkadotConfig as Config>::AccountId, ()>,
-    #[codec(compact)]
-    value: Balance,
-    gas_limit: Weight,
-    storage_deposit_limit: Option<Compact<Balance>>,
-    data: Vec<u8>,
-}
-
-impl Call {
-    fn build(self) -> subxt::tx::Payload<Self> {
-        subxt::tx::Payload::new("Contracts", "call", self)
-    }
 }
 
 /// Command line utility to interact with StaexIoD provisioner.
@@ -118,6 +87,10 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let cli = Cli::parse();
+    if let Commands::Config {} = cli.command {
+        eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
+        return Ok(());
+    }
     let cfg: config::Config = || -> Result<config::Config, Error> {
         let buf = match std::fs::read_to_string(cli.config) {
             Ok(buf) => buf,
@@ -129,34 +102,46 @@ async fn main() -> Result<(), Error> {
         let cfg: config::Config = toml::from_str(&buf)?;
         Ok(cfg)
     }()?;
-    let app = App::new(cfg.did.clone());
-    match cli.command {
-        Commands::Config {} => eprint!("{}", toml::to_string_pretty(&cfg)?),
-        Commands::Run {} => app.run(cfg.rpc_url).await?,
+    let app: App = App::new(cfg.did, cfg.rpc_url).await?;
+    if let Commands::Run {} = cli.command {
+        app.run().await?;
     }
     Ok(())
 }
 
 struct App {
     did: config::DID,
+    api: OnlineClient<PolkadotConfig>,
+    rpc: RpcClient,
+    rpc_legacy: LegacyRpcMethods<PolkadotConfig>,
+    transcoder: ContractMessageTranscoder,
 }
 
 impl App {
-    fn new(did: config::DID) -> Self {
-        Self { did }
-    }
-
-    async fn run(&self, rpc_url: String) -> Result<(), Error> {
+    async fn new(did: config::DID, rpc_url: String) -> Result<Self, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(&rpc_url).await?;
         let rpc = rpc::RpcClient::from_url(rpc_url).await?;
+        let rpc_legacy: LegacyRpcMethods<PolkadotConfig> = LegacyRpcMethods::new(rpc.clone());
+        let transcoder = ContractMessageTranscoder::load(did.metadata_path.clone())?;
+        Ok(Self {
+            did,
+            api,
+            rpc,
+            rpc_legacy,
+            transcoder,
+        })
+    }
+
+    async fn run(&self) -> Result<(), Error> {
         let mut i: usize = 0;
         if self.did.sync {
-            self.call(api.clone(), rpc.clone(), &dev::alice()).await?;
+            let signer = dev::alice();
+            self.sync(&signer).await?;
         }
         if self.did.explorer {
             loop {
                 let res: Result<H256, subxt::Error> =
-                    rpc.request("chain_getBlockHash", rpc_params![i]).await;
+                    self.rpc.request("chain_getBlockHash", rpc_params![i]).await;
                 if let Err(e) = res {
                     match e {
                         subxt::Error::Serialization(_) => return Ok(()),
@@ -164,51 +149,40 @@ impl App {
                     }
                 }
                 let hash = res?;
-                let block = api.blocks().at(hash).await?;
+                let block = self.api.blocks().at(hash).await?;
                 let events = block.events().await?;
                 eprintln!("found {:?} events in {:?}", events.len(), block.number());
-                self.process_events(events)?;
+                self.process_events(&events)?;
                 i += 1;
             }
         }
         Ok(())
     }
 
-    fn process_events(&self, events: subxt::events::Events<PolkadotConfig>) -> Result<(), Error> {
+    fn process_events(&self, events: &Events<PolkadotConfig>) -> Result<(), Error> {
         for event in events.iter() {
             let event = event?;
-            if let Ok(evt) = event
-                .as_root_event::<did::api::runtime_types::contracts_node_runtime::RuntimeEvent>()
-            {
+            if let Ok(evt) = event.as_root_event::<RuntimeEvent>() {
                 self.process_event(evt)?
             }
         }
         Ok(())
     }
 
-    fn process_event(
-        &self,
-        evt: did::api::runtime_types::contracts_node_runtime::RuntimeEvent,
-    ) -> Result<(), Error> {
-        if let did::api::runtime_types::contracts_node_runtime::RuntimeEvent::Contracts(
-            did::api::runtime_types::pallet_contracts::pallet::Event::ContractEmitted {
-                contract,
-                data,
-            },
-        ) = evt
-        {
+    fn process_event(&self, evt: RuntimeEvent) -> Result<(), Error> {
+        if let RuntimeEvent::Contracts(Event::ContractEmitted { contract, data }) = evt {
             if contract != self.did.contract_address || data.is_empty() {
                 return Ok(());
             }
-            let event: Event = Event::from(data[0]);
+            let event: DIDEvent = DIDEvent::from(data[0]);
             let mut buf = vec![0; data.len() - 1];
             buf.copy_from_slice(&data[1..]);
             match event {
-                Event::BeforeFlipping => {
+                DIDEvent::BeforeFlipping => {
                     let data = BeforeFlipping::decode_all(&mut buf.as_slice())?;
                     eprintln!("{:?}", data);
                 }
-                Event::AfterFlipping => {
+                DIDEvent::AfterFlipping => {
                     let data = AfterFlipping::decode_all(&mut buf.as_slice())?;
                     eprintln!("{:?}", data);
                 }
@@ -217,88 +191,50 @@ impl App {
         Ok(())
     }
 
-    async fn call<T: Signer<PolkadotConfig>>(
-        &self,
-        api: OnlineClient<PolkadotConfig>,
-        rpc: RpcClient,
-        signer: &T,
-    ) -> Result<(), Error> {
-        let rpc_legacy: LegacyRpcMethods<PolkadotConfig> = LegacyRpcMethods::new(rpc);
-        let transcoder = ContractMessageTranscoder::load("did.metadata.json")?; // todo: to config
-
-        let val = self.get(&rpc_legacy, signer, &transcoder).await?;
+    async fn sync<S: Signer<PolkadotConfig>>(&self, signer: &S) -> Result<(), Error> {
+        let val = self.get(signer.account_id()).await?;
         eprintln!("Value before executing: {:?}", val);
-        self.flip(api, &rpc_legacy, signer, &transcoder).await?;
-        let val = self.get(&rpc_legacy, signer, &transcoder).await?;
+        self.flip(signer).await?;
+        let val = self.get(signer.account_id()).await?;
         eprintln!("Value after executing: {:?}", val);
-
         Ok(())
     }
 
-    async fn flip<T, S>(
-        &self,
-        api: OnlineClient<T>,
-        rpc_legacy: &LegacyRpcMethods<T>,
-        signer: &S,
-        transcoder: &ContractMessageTranscoder,
-    ) -> Result<(), Error>
-    where
-        T: Config,
-        S: tx::Signer<T>,
-        <T::ExtrinsicParams as ExtrinsicParams<T>>::OtherParams: Default,
-    {
+    async fn flip<S: Signer<PolkadotConfig>>(&self, signer: &S) -> Result<(), Error> {
         let message = "flip";
         let args: Vec<String> = vec![];
-        let buf = transcoder.encode(message, args)?;
-        let call = Call {
-            dest: MultiAddress::Id(self.did.contract_address.clone()),
-            gas_limit: Weight {
-                ref_time: 500_000_000 * 10, // todo: calc
-                proof_size: u64::MAX / 2,   // todo: calc
+        let buf = self.transcoder.encode(message, args)?;
+        let call = (TransactionApi {}).contracts().call(
+            MultiAddress::Id(self.did.contract_address.clone()),
+            0,
+            Weight {
+                ref_time: 5_000_000_000, // todo: calc
+                proof_size: 5_000_000,   // todo: calc
             },
-            storage_deposit_limit: None,
-            value: 0,
-            data: buf,
-        }
-        .build();
-        submit_tx(&api, rpc_legacy, &call, signer).await
+            None,
+            buf,
+        );
+        self.submit_tx(&call, signer).await
     }
 
-    async fn get<T, S>(
-        &self,
-        rpc_legacy: &LegacyRpcMethods<T>,
-        signer: &S,
-        transcoder: &ContractMessageTranscoder,
-    ) -> Result<bool, Error>
-    where
-        T: Config,
-        S: Signer<PolkadotConfig>,
-    {
+    async fn get(&self, sender: AccountId32) -> Result<bool, Error> {
         const METHOD: &str = "get";
-        let signer = <PolkadotConfig as Config>::AccountId::from(signer.account_id().0);
-        let contract =
-            <PolkadotConfig as Config>::AccountId::from(self.did.contract_address.clone());
-        let args: Vec<String> = vec![];
-        let buf = transcoder.encode(METHOD, args)?;
-        let args_buf = ContractCallArgs {
-            origin: signer,
-            dest: contract.clone(),
+        let input_data_args: Vec<String> = vec![];
+        let input_data = self.transcoder.encode(METHOD, input_data_args)?;
+        let args = Call {
+            origin: sender,
+            dest: self.did.contract_address.clone(),
             gas_limit: None,
             storage_deposit_limit: None,
             value: 0,
-            input_data: buf,
+            input_data,
         }
         .encode();
-        let bytes = rpc_legacy.state_call("ContractsApi_call", Some(&args_buf), None).await?;
-        let data: pallet_contracts_primitives::ContractExecResult<
-            Balance,
-            did::api::runtime_types::frame_system::EventRecord<
-                did::api::runtime_types::contracts_node_runtime::RuntimeEvent,
-                H256,
-            >,
-        > = scale::decode_from_bytes(bytes.clone().into())?;
+        let bytes = self.rpc_legacy.state_call("ContractsApi_call", Some(&args), None).await?;
+        let data: ContractExecResult<Balance, EventRecord<RuntimeEvent, H256>> =
+            scale::decode_from_bytes(bytes.clone().into())?;
         let data = data.result.unwrap();
-        let data = transcoder.decode_return(METHOD, &mut data.data.as_ref())?;
+        let data = self.transcoder.decode_return(METHOD, &mut data.data.as_ref())?;
         match data {
             Value::Tuple(t) => {
                 if t.values().count() != 1 {
@@ -313,65 +249,59 @@ impl App {
             _ => Err("unexpected response: value is not tuple".into()),
         }
     }
-}
 
-async fn submit_tx<T, Call, Signer>(
-    api: &OnlineClient<T>,
-    rpc_legacy: &LegacyRpcMethods<T>,
-    call: &Call,
-    signer: &Signer,
-) -> Result<(), Error>
-where
-    T: Config,
-    Call: tx::TxPayload,
-    Signer: tx::Signer<T>,
-    <T::ExtrinsicParams as ExtrinsicParams<T>>::OtherParams: Default,
-{
-    let account_id = Signer::account_id(signer);
-    let account_nonce = get_account_nonce(api, rpc_legacy, &account_id).await?;
-    let mut tx = api
-        .tx()
-        .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
-        .submit_and_watch()
-        .await?;
-    while let Some(status) = tx.next().await {
-        match status? {
-            TxStatus::InBestBlock(tx_in_block) | TxStatus::InFinalizedBlock(tx_in_block) => {
-                let _events = tx_in_block.wait_for_success().await?;
-                return Ok(());
+    async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(
+        &self,
+        call: &Call,
+        signer: &S,
+    ) -> Result<(), Error> {
+        let account_id = signer.account_id();
+        let account_nonce = self.get_account_nonce(&account_id).await?;
+        let mut tx = self
+            .api
+            .tx()
+            .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
+            .submit_and_watch()
+            .await?;
+        while let Some(status) = tx.next().await {
+            match status? {
+                TxStatus::InBestBlock(tx_in_block) | TxStatus::InFinalizedBlock(tx_in_block) => {
+                    let events = tx_in_block.wait_for_success().await?;
+                    self.process_events(events.all_events_in_block())?;
+                    return Ok(());
+                }
+                TxStatus::Error { message } => return Err(TransactionError::Error(message).into()),
+                TxStatus::Invalid { message } => {
+                    return Err(TransactionError::Invalid(message).into())
+                }
+                TxStatus::Dropped { message } => {
+                    return Err(TransactionError::Dropped(message).into())
+                }
+                _ => continue,
             }
-            TxStatus::Error { message } => return Err(TransactionError::Error(message).into()),
-            TxStatus::Invalid { message } => return Err(TransactionError::Invalid(message).into()),
-            TxStatus::Dropped { message } => return Err(TransactionError::Dropped(message).into()),
-            _ => continue,
         }
+        Err(RpcError::SubscriptionDropped.into())
     }
-    Err(RpcError::SubscriptionDropped.into())
-}
 
-async fn get_account_nonce<T>(
-    client: &OnlineClient<T>,
-    rpc_legacy: &LegacyRpcMethods<T>,
-    account_id: &T::AccountId,
-) -> Result<u64, Error>
-where
-    T: Config,
-{
-    let best_block = rpc_legacy
-        .chain_get_block_hash(None)
-        .await?
-        .ok_or(subxt::Error::Other("best block not found".into()))?;
-    let account_nonce = client.blocks().at(best_block).await?.account_nonce(account_id).await?;
-    Ok(account_nonce)
+    async fn get_account_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
+        let best_block = self
+            .rpc_legacy
+            .chain_get_block_hash(None)
+            .await?
+            .ok_or(subxt::Error::Other("best block not found".into()))?;
+        let account_nonce =
+            self.api.blocks().at(best_block).await?.account_nonce(account_id).await?;
+        Ok(account_nonce)
+    }
 }
 
 // All provisioner config related source code is here.
 mod config {
     use std::collections::HashMap;
 
-    use super::*;
+    use subxt::utils::AccountId32;
 
-    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone)]
     pub(crate) struct Config {
         pub(crate) rpc_url: String,
         pub(crate) did: DID,
@@ -391,7 +321,8 @@ mod config {
     pub(crate) struct DID {
         pub(crate) sync: bool,
         pub(crate) explorer: bool,
-        pub(crate) contract_address: <PolkadotConfig as subxt::Config>::AccountId,
+        pub(crate) contract_address: AccountId32,
+        pub(crate) metadata_path: String,
         pub(crate) attributes: Attributes,
     }
 
@@ -403,6 +334,7 @@ mod config {
                 contract_address: "5CY6gQExahvFwDZmNDLu4RxS5bQQGrQmV8yUFgRKbhd1tANC"
                     .parse()
                     .unwrap(),
+                metadata_path: "did.metadata.json".to_string(),
                 attributes: Attributes::default(),
             }
         }
@@ -410,7 +342,7 @@ mod config {
 
     // All fields are required attributes for every DID.
     // Only "additional" is additional.
-    #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+    #[derive(serde::Serialize, serde::Deserialize, Clone, Default)]
     pub(crate) struct Attributes {
         pub(crate) data_type: String,
         pub(crate) location: String,
