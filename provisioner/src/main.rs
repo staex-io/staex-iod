@@ -1,10 +1,10 @@
 use std::fmt::Debug;
+use std::str::from_utf8;
 
 use clap::{Parser, Subcommand};
 use contract_transcode::{ContractMessageTranscoder, Value};
 use pallet_contracts_primitives::ContractExecResult;
-use scale::DecodeAll;
-use scale::Encode;
+use scale::{DecodeAll, Encode};
 use subxt::backend::legacy::LegacyRpcMethods;
 use subxt::backend::rpc::RpcClient;
 use subxt::error::{RpcError, TransactionError};
@@ -22,7 +22,6 @@ use crate::did::api::runtime_apis::contracts_api::types::Call;
 use crate::did::api::runtime_types::contracts_node_runtime::RuntimeEvent;
 use crate::did::api::runtime_types::frame_system::EventRecord;
 use crate::did::api::runtime_types::pallet_contracts::pallet::Event;
-use crate::did::api::runtime_types::sp_weights::weight_v2::Weight;
 use crate::did::api::TransactionApi;
 
 mod did;
@@ -61,6 +60,38 @@ struct AfterFlipping {
     _field1: u64,
     _field2: String,
     _field3: bool,
+}
+
+#[derive(scale::Encode, scale::Decode, Debug)]
+struct Weight {
+    #[codec(compact)]
+    ref_time: u64,
+    #[codec(compact)]
+    proof_size: u64,
+}
+
+impl Weight {
+    fn new(ref_time: u64, proof_size: u64) -> Self {
+        Self {
+            ref_time,
+            proof_size,
+        }
+    }
+}
+
+impl From<Weight> for crate::did::api::runtime_types::sp_weights::weight_v2::Weight {
+    fn from(value: Weight) -> Self {
+        Self {
+            ref_time: value.ref_time,
+            proof_size: value.proof_size,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct DryRunResult {
+    data: Value,
+    gas_required: Weight,
 }
 
 /// Command line utility to interact with StaexIoD provisioner.
@@ -202,39 +233,24 @@ impl App {
 
     async fn flip<S: Signer<PolkadotConfig>>(&self, signer: &S) -> Result<(), Error> {
         let message = "flip";
-        let args: Vec<String> = vec![];
-        let buf = self.transcoder.encode(message, args)?;
+        let input_data_args: Vec<String> = vec![];
+        let dry_run_res =
+            self.dry_run(message, input_data_args.clone(), signer.account_id()).await?;
+        let data = self.transcoder.encode(message, input_data_args)?;
         let call = (TransactionApi {}).contracts().call(
             MultiAddress::Id(self.did.contract_address.clone()),
             0,
-            Weight {
-                ref_time: 5_000_000_000, // todo: calc
-                proof_size: 5_000_000,   // todo: calc
-            },
+            dry_run_res.gas_required.into(),
             None,
-            buf,
+            data,
         );
         self.submit_tx(&call, signer).await
     }
 
     async fn get(&self, sender: AccountId32) -> Result<bool, Error> {
-        const METHOD: &str = "get";
+        const MESSAGE: &str = "get";
         let input_data_args: Vec<String> = vec![];
-        let input_data = self.transcoder.encode(METHOD, input_data_args)?;
-        let args = Call {
-            origin: sender,
-            dest: self.did.contract_address.clone(),
-            gas_limit: None,
-            storage_deposit_limit: None,
-            value: 0,
-            input_data,
-        }
-        .encode();
-        let bytes = self.rpc_legacy.state_call("ContractsApi_call", Some(&args), None).await?;
-        let data: ContractExecResult<Balance, EventRecord<RuntimeEvent, H256>> =
-            scale::decode_from_bytes(bytes.clone().into())?;
-        let data = data.result.unwrap();
-        let data = self.transcoder.decode_return(METHOD, &mut data.data.as_ref())?;
+        let data = self.dry_run(MESSAGE, input_data_args, sender).await?.data;
         match data {
             Value::Tuple(t) => {
                 if t.values().count() != 1 {
@@ -293,6 +309,37 @@ impl App {
             self.api.blocks().at(best_block).await?.account_nonce(account_id).await?;
         Ok(account_nonce)
     }
+
+    async fn dry_run(
+        &self,
+        message: &str,
+        input_data_args: Vec<String>,
+        sender: AccountId32,
+    ) -> Result<DryRunResult, Error> {
+        let input_data = self.transcoder.encode(message, input_data_args)?;
+        let args = Call {
+            origin: sender,
+            dest: self.did.contract_address.clone(),
+            gas_limit: None,
+            storage_deposit_limit: None,
+            value: 0,
+            input_data,
+        }
+        .encode();
+        let bytes = self.rpc_legacy.state_call("ContractsApi_call", Some(&args), None).await?;
+        let exec_res: ContractExecResult<Balance, EventRecord<RuntimeEvent, H256>> =
+            scale::decode_from_bytes(bytes.clone().into())?;
+        let exec_res_data = exec_res.result.unwrap();
+        let data = self.transcoder.decode_return(message, &mut exec_res_data.data.as_ref())?;
+        eprintln!("Message logs: {}: {:?}", message, from_utf8(&exec_res.debug_message).unwrap());
+        Ok(DryRunResult {
+            data,
+            gas_required: Weight::new(
+                exec_res.gas_required.ref_time(),
+                exec_res.gas_required.proof_size(),
+            ),
+        })
+    }
 }
 
 // All provisioner config related source code is here.
@@ -331,7 +378,7 @@ mod config {
             Self {
                 sync: true,
                 explorer: true,
-                contract_address: "5CY6gQExahvFwDZmNDLu4RxS5bQQGrQmV8yUFgRKbhd1tANC"
+                contract_address: "5Fw99Z8GCJ1pKt1xLcMDVnv4aeS664jb93HBwmgSwEudoWpx"
                     .parse()
                     .unwrap(),
                 metadata_path: "did.metadata.json".to_string(),

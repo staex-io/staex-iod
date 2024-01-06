@@ -10,9 +10,9 @@ The goal of this project is to create a Web3 IoT data infrastructure with a stab
 # From project root folder.
 rm -rf data-substrate ; make run_substrate
 # From another terminal session.
-cd contracts
+cd contracts/ink
 make deploy name=did
-cd ../provisioner
+cd ../../provisioner
 cargo run -- run
 ```
 

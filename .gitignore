@@ -1,4 +1,5 @@
 .vscode
+.idea
 target
 data-substrate
 provisioner/config.toml

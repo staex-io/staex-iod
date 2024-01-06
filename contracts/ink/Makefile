@@ -1,3 +1,12 @@
+fmt:
+	cd $(name) && cargo +nightly fmt
+
+lint: fmt
+	cd $(name) && cargo clippy --tests --workspace -- -D warnings
+
+test:
+	cd $(name) && cargo test --jobs 1 -- --nocapture --test-threads 1 $(test)
+
 build:
 	cd $(name) && cargo contract build
 
