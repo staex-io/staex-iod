@@ -9,14 +9,13 @@ use subxt::backend::legacy::LegacyRpcMethods;
 use subxt::backend::rpc::RpcClient;
 use subxt::error::{RpcError, TransactionError};
 use subxt::events::Events;
-use subxt::tx::TxPayload;
-use subxt::tx::{Signer, TxStatus};
+use subxt::tx::{Signer, TxPayload, TxStatus};
 use subxt::utils::MultiAddress;
 use subxt::{
     backend::rpc, config::substrate::H256, rpc_params, utils::AccountId32, OnlineClient,
     PolkadotConfig,
 };
-use subxt_signer::sr25519::dev;
+use subxt_signer::sr25519::{dev, Keypair};
 
 use crate::did::api::runtime_apis::contracts_api::types::Call;
 use crate::did::api::runtime_types::contracts_node_runtime::RuntimeEvent;
@@ -25,6 +24,8 @@ use crate::did::api::runtime_types::pallet_contracts::pallet::Event;
 use crate::did::api::TransactionApi;
 
 mod did;
+
+const DOT_MULTIPLIER: u128 = 10u128.pow(16);
 
 type Error = Box<dyn std::error::Error>;
 
@@ -113,6 +114,10 @@ enum Commands {
     Config {},
     /// Run provisioner.
     Run {},
+    /// Create new account.
+    NewAccount {},
+    /// Faucet your account from dev accounts.
+    Faucet { address: AccountId32 },
 }
 
 #[tokio::main]
@@ -133,9 +138,45 @@ async fn main() -> Result<(), Error> {
         let cfg: config::Config = toml::from_str(&buf)?;
         Ok(cfg)
     }()?;
+    // Offline commands.
+    let mut offline_was_executed = true;
+    match cli.command {
+        Commands::NewAccount {} => {
+            let phrase = bip39::Mnemonic::generate(12)?;
+            let pair = Keypair::from_phrase(&phrase, None)?;
+            let account_id: AccountId32 =
+                <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&pair);
+            eprintln!("Seed phrase: {:?}", phrase.to_string());
+            eprintln!("Address: {:?}", account_id.to_string());
+        }
+        _ => offline_was_executed = false,
+    }
+    if offline_was_executed {
+        return Ok(());
+    }
     let app: App = App::new(cfg.did, cfg.rpc_url).await?;
-    if let Commands::Run {} = cli.command {
-        app.run().await?;
+    // Online commands.
+    match cli.command {
+        Commands::Run {} => {
+            app.run().await?;
+        }
+        Commands::Faucet { address } => {
+            let balance = app.get_balance(&address).await?;
+            eprintln!("Balance: {:?} DOT", balance / DOT_MULTIPLIER);
+
+            let tx = crate::did::api::tx()
+                .balances()
+                .transfer_allow_death(MultiAddress::Id(address.clone()), 10 * DOT_MULTIPLIER);
+            app.submit_tx(&tx, &dev::alice()).await?;
+
+            // todo: do we need to finalize block manually to see changed balance?
+            // let bytes = app.rpc.request("engine_finalizeBlock", rpc_params![]).await?;
+            // eprintln!("{:?}", bytes);
+
+            let balance = app.get_balance(&address).await?;
+            eprintln!("Balance: {:?} DOT", balance / DOT_MULTIPLIER);
+        }
+        _ => (),
     }
     Ok(())
 }
@@ -229,6 +270,16 @@ impl App {
         let val = self.get(signer.account_id()).await?;
         eprintln!("Value after executing: {:?}", val);
         Ok(())
+    }
+
+    async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
+        let balance_address = crate::did::api::storage().system().account(address);
+        let info = self.api.storage().at_latest().await?.fetch(&balance_address).await?;
+        if let Some(info) = info {
+            return Ok(info.data.free);
+        }
+        eprintln!("Account is not initialized?");
+        Ok(0)
     }
 
     async fn flip<S: Signer<PolkadotConfig>>(&self, signer: &S) -> Result<(), Error> {
@@ -378,7 +429,7 @@ mod config {
             Self {
                 sync: true,
                 explorer: true,
-                contract_address: "5Fw99Z8GCJ1pKt1xLcMDVnv4aeS664jb93HBwmgSwEudoWpx"
+                contract_address: "5CC6P6tLiRAao554Mkq7LnXeD4AyfcamMPrm64BdH7kdmx9W"
                     .parse()
                     .unwrap(),
                 metadata_path: "did.metadata.json".to_string(),

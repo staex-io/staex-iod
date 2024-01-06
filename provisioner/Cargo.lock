@@ -2827,6 +2827,7 @@ dependencies = [
 name = "provisioner"
 version = "0.1.0"
 dependencies = [
+ "bip39",
  "clap",
  "contract-transcode",
  "pallet-contracts-primitives",
