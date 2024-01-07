@@ -1,9 +1,9 @@
 use std::fmt::{Debug, Display};
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 
 use clap::{Parser, Subcommand};
 use contract_transcode::{ContractMessageTranscoder, Value};
-use log::{debug, info, warn, Level};
+use log::{debug, info, trace, warn, Level};
 use pallet_contracts_primitives::ContractExecResult;
 use scale::{DecodeAll, Encode};
 use subxt::backend::legacy::LegacyRpcMethods;
@@ -16,7 +16,8 @@ use subxt::{
     backend::rpc, config::substrate::H256, rpc_params, utils::AccountId32, OnlineClient,
     PolkadotConfig,
 };
-use subxt_signer::sr25519::{dev, Keypair};
+use subxt_signer::sr25519::Keypair;
+use subxt_signer::SecretUri;
 
 use crate::did::api::runtime_apis::contracts_api::types::Call;
 use crate::did::api::runtime_types::contracts_node_runtime::RuntimeEvent;
@@ -206,7 +207,13 @@ enum Commands {
     /// Run provisioner.
     Run {},
     /// Create new account.
-    NewAccount {},
+    NewAccount {
+        /// Faucet account on creation.
+        /// This flag requires node to be online.
+        #[arg(short, long)]
+        #[arg(default_value = "false")]
+        faucet: bool,
+    },
     /// Faucet account.
     Faucet {
         /// Address to send tokens to.
@@ -236,43 +243,32 @@ async fn main() -> Result<(), Error> {
     // Offline commands.
     let mut offline_was_executed = true;
     match cli.command {
-        Commands::NewAccount {} => {
+        Commands::NewAccount { faucet } => {
             let phrase = bip39::Mnemonic::generate(12)?;
-            let pair = Keypair::from_phrase(&phrase, None)?;
+            let keypair = Keypair::from_phrase(&phrase, None)?;
             let account_id: AccountId32 =
-                <subxt_signer::sr25519::Keypair as Signer<SUBXTConfig>>::account_id(&pair);
+                <subxt_signer::sr25519::Keypair as Signer<SUBXTConfig>>::account_id(&keypair);
             eprintln!("Seed phrase: {}", phrase);
             eprintln!("Address: {}", account_id);
+            if faucet {
+                let cfg = cfg.clone();
+                let app: App = App::new(cfg.rpc_url, cfg.signer, cfg.did).await?;
+                app.faucet(cfg.faucet, &account_id).await?;
+            }
         }
         _ => offline_was_executed = false,
     }
     if offline_was_executed {
         return Ok(());
     }
-    let app: App = App::new(cfg.did, cfg.rpc_url).await?;
+    let app: App = App::new(cfg.rpc_url, cfg.signer, cfg.did).await?;
     // Online commands.
     match cli.command {
         Commands::Run {} => {
             app.run().await?;
         }
         Commands::Faucet { address } => {
-            let faucet = dev::alice();
-            let faucet_account_id: AccountId32 =
-                <subxt_signer::sr25519::Keypair as Signer<SUBXTConfig>>::account_id(&faucet);
-            let balance = app.get_balance(&faucet_account_id).await?;
-            info!("faucet balance: {}: {}", faucet_account_id, balance.as_dot());
-
-            let balance = app.get_balance(&address).await?;
-            info!("address balance before: {}", balance.as_dot());
-
-            let tx = crate::did::api::tx().balances().transfer_allow_death(
-                MultiAddress::Id(address.clone()),
-                Balance::from_dot(100).as_planck().raw,
-            );
-            app.submit_tx(&tx, &faucet).await?;
-
-            let balance = app.get_balance(&address).await?;
-            info!("address balance after: {}", balance.as_dot());
+            app.faucet(cfg.faucet, &address).await?;
         }
         _ => (),
     }
@@ -280,33 +276,59 @@ async fn main() -> Result<(), Error> {
 }
 
 struct App {
-    did: config::DID,
     api: OnlineClient<SUBXTConfig>,
     rpc: RpcClient,
     rpc_legacy: LegacyRpcMethods<SUBXTConfig>,
     transcoder: ContractMessageTranscoder,
+    keypair: Keypair,
+    did: config::DID,
 }
 
 impl App {
-    async fn new(did: config::DID, rpc_url: String) -> Result<Self, Error> {
+    async fn new(rpc_url: String, signer: config::Signer, did: config::DID) -> Result<Self, Error> {
         let api = OnlineClient::<SUBXTConfig>::from_url(&rpc_url).await?;
         let rpc = rpc::RpcClient::from_url(rpc_url).await?;
         let rpc_legacy: LegacyRpcMethods<SUBXTConfig> = LegacyRpcMethods::new(rpc.clone());
         let transcoder = ContractMessageTranscoder::load(did.metadata_path.clone())?;
+        let keypair = match signer.typ {
+            config::SignerType::SecretUri => Keypair::from_uri(&SecretUri::from_str(&signer.val)?)?,
+            config::SignerType::Phrase => {
+                Keypair::from_phrase(&bip39::Mnemonic::from_str(&signer.val)?, None)?
+            }
+        };
         Ok(Self {
-            did,
             api,
             rpc,
             rpc_legacy,
             transcoder,
+            keypair,
+            did,
         })
+    }
+
+    async fn faucet(&self, cfg: config::Faucet, address: &AccountId32) -> Result<(), Error> {
+        let faucet = Keypair::from_uri(&SecretUri::from_str(&cfg.secret_uri)?)?;
+        let faucet_account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<SUBXTConfig>>::account_id(&faucet);
+        let balance = self.get_balance(&faucet_account_id).await?;
+        info!("faucet balance: {}: {}", faucet_account_id, balance.as_dot());
+
+        let balance = self.get_balance(address).await?;
+        info!("address balance before: {}", balance.as_dot());
+        let tx = crate::did::api::tx().balances().transfer_allow_death(
+            MultiAddress::Id(address.clone()),
+            Balance::from_dot(cfg.amount as u128).as_planck().raw,
+        );
+        self.submit_tx(&tx, &faucet).await?;
+        let balance = self.get_balance(address).await?;
+        info!("address balance after: {}", balance.as_dot());
+        Ok(())
     }
 
     async fn run(&self) -> Result<(), Error> {
         let mut i: usize = 0;
         if self.did.sync {
-            let signer = dev::alice();
-            self.sync(&signer).await?;
+            self.sync().await?;
         }
         if self.did.explorer {
             loop {
@@ -373,25 +395,24 @@ impl App {
                 }
                 _ => (),
             },
-            _ => debug!("runtime event: {:?}", evt),
+            _ => trace!("runtime event: {:?}", evt),
         }
         Ok(())
     }
 
-    async fn sync<S: Signer<SUBXTConfig>>(&self, signer: &S) -> Result<(), Error> {
-        let val = self.get(signer.account_id()).await?;
+    async fn sync(&self) -> Result<(), Error> {
+        let val = self.get().await?;
         debug!("value before executing: {:?}", val);
-        self.flip(signer).await?;
-        let val = self.get(signer.account_id()).await?;
+        self.flip().await?;
+        let val = self.get().await?;
         debug!("value after executing: {:?}", val);
         Ok(())
     }
 
-    async fn flip<S: Signer<SUBXTConfig>>(&self, signer: &S) -> Result<(), Error> {
+    async fn flip(&self) -> Result<(), Error> {
         let message = "flip";
         let input_data_args: Vec<String> = vec![];
-        let dry_run_res =
-            self.dry_run(message, input_data_args.clone(), signer.account_id()).await?;
+        let dry_run_res = self.dry_run(message, input_data_args.clone()).await?;
         let data = self.transcoder.encode(message, input_data_args)?;
         let call = (TransactionApi {}).contracts().call(
             MultiAddress::Id(self.did.contract_address.clone()),
@@ -400,13 +421,13 @@ impl App {
             None,
             data,
         );
-        self.submit_tx(&call, signer).await
+        self.submit_tx(&call, &self.keypair).await
     }
 
-    async fn get(&self, sender: AccountId32) -> Result<bool, Error> {
+    async fn get(&self) -> Result<bool, Error> {
         const MESSAGE: &str = "get";
         let input_data_args: Vec<String> = vec![];
-        let res = self.dry_run(MESSAGE, input_data_args, sender).await?;
+        let res = self.dry_run(MESSAGE, input_data_args).await?;
         res.to_get_message_res()
     }
 
@@ -473,11 +494,12 @@ impl App {
         &self,
         message: &str,
         input_data_args: Vec<String>,
-        sender: AccountId32,
     ) -> Result<DryRunResult, Error> {
         let input_data = self.transcoder.encode(message, input_data_args)?;
         let args = Call {
-            origin: sender,
+            origin: <subxt_signer::sr25519::Keypair as Signer<SUBXTConfig>>::account_id(
+                &self.keypair,
+            ),
             dest: self.did.contract_address.clone(),
             gas_limit: None,
             storage_deposit_limit: None,
@@ -508,10 +530,14 @@ mod config {
     use log::Level;
     use subxt::utils::AccountId32;
 
+    use crate::Balance;
+
     #[derive(serde::Serialize, serde::Deserialize, Clone)]
     pub(crate) struct Config {
         pub(crate) log_level: String,
         pub(crate) rpc_url: String,
+        pub(crate) signer: Signer,
+        pub(crate) faucet: Faucet,
         pub(crate) did: DID,
     }
 
@@ -520,7 +546,30 @@ mod config {
             Self {
                 log_level: Level::Debug.to_string(),
                 rpc_url: "ws://127.0.0.1:9944".to_string(),
-                did: DID::default(),
+                signer: Default::default(),
+                faucet: Default::default(),
+                did: Default::default(),
+            }
+        }
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize, Clone)]
+    pub(crate) enum SignerType {
+        SecretUri,
+        Phrase,
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize, Clone)]
+    pub(crate) struct Signer {
+        pub(crate) typ: SignerType,
+        pub(crate) val: String,
+    }
+
+    impl Default for Signer {
+        fn default() -> Self {
+            Self {
+                typ: SignerType::SecretUri,
+                val: "//Alice".to_string(),
             }
         }
     }
@@ -558,6 +607,22 @@ mod config {
         pub(crate) price_access: String,
         pub(crate) pin_access: String,
         pub(crate) additional: Option<HashMap<String, toml::Value>>,
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize, Clone)]
+    pub(crate) struct Faucet {
+        pub(crate) secret_uri: String,
+        // We store amount as DOT.
+        pub(crate) amount: u64,
+    }
+
+    impl Default for Faucet {
+        fn default() -> Self {
+            Self {
+                secret_uri: "//Alice".to_string(),
+                amount: Balance::from_dot(100_000).raw as u64,
+            }
+        }
     }
 }
 
