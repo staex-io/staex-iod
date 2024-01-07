@@ -1,5 +1,7 @@
 # Provisioner
 
+## Usage
+
 ```shell
-cargo run --
+cargo run -- --help
 ```

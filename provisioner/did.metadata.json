@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x7d8a80ebbd7c421972d03f3b0b48bbef1b86620ef2808368dd1775cf194deea7",
+    "hash": "0xcccdd7153529842fe5d17a601ae6601b87cf44236de856925783db8f8f289537",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.75.0",
     "build_info": {
@@ -35,9 +35,7 @@
           }
         ],
         "default": false,
-        "docs": [
-          "Constructor that initializes the `bool` value to the given `init_value`."
-        ],
+        "docs": [],
         "label": "new",
         "payable": false,
         "returnType": {
@@ -52,11 +50,7 @@
       {
         "args": [],
         "default": false,
-        "docs": [
-          "Constructor that initializes the `bool` value to `false`.",
-          "",
-          "Constructors can delegate to other constructors."
-        ],
+        "docs": [],
         "label": "default",
         "payable": false,
         "returnType": {
@@ -222,11 +216,7 @@
       {
         "args": [],
         "default": false,
-        "docs": [
-          " A message that can be called on instantiated contracts.",
-          " This one flips the value of the stored `bool` from `true`",
-          " to `false` and vice versa."
-        ],
+        "docs": [],
         "label": "flip",
         "mutates": true,
         "payable": false,
@@ -242,9 +232,7 @@
       {
         "args": [],
         "default": false,
-        "docs": [
-          " Simply returns the current value of our `bool`."
-        ],
+        "docs": [],
         "label": "get",
         "mutates": false,
         "payable": false,

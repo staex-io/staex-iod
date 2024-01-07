@@ -15,4 +15,3 @@ make deploy name=did
 cd ../../provisioner
 cargo run -- run
 ```
-
