@@ -592,7 +592,7 @@ mod config {
                 contract_address: "5H4UGYpLFL2aobsv71CsiFwfcXe9yoSMGtrc6VENGzGRyQZa"
                     .parse()
                     .unwrap(),
-                metadata_path: "did.metadata.json".to_string(),
+                metadata_path: "assets/did.metadata.json".to_string(),
                 attributes: Attributes::default(),
             }
         }

@@ -8,6 +8,8 @@ cargo run -- --help
 
 ### Example config file
 
+Config file should be location in provisioner root folder for default file path value.
+
 ```shell
 cargo run -- config
 ```
