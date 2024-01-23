@@ -363,21 +363,40 @@ impl App {
 
     fn process_event(&self, evt: RuntimeEvent) -> Result<(), Error> {
         match evt {
-            RuntimeEvent::Contracts(ContractsEvent::ContractEmitted { contract, data }) => {
+            RuntimeEvent::Contracts(ContractsEvent::ContractEmitted { contract, mut data }) => {
                 if contract != self.did.contract_address || data.is_empty() {
                     return Ok(());
                 }
-                let event: DIDEvent = DIDEvent::from(data[0]);
-                let mut buf = vec![0; data.len() - 1];
-                buf.copy_from_slice(&data[1..]);
-                match event {
-                    DIDEvent::BeforeFlipping => {
-                        let data = BeforeFlipping::decode_all(&mut buf.as_slice())?;
-                        debug!("before flipping event: {}", data);
+                // Decode without using exact types.
+                {
+                    // By putting first byte as zero we point that event variant type is located in first byte.
+                    data.insert(0, 0);
+                    let value = self.transcoder.decode_contract_event(&mut data.as_slice())?;
+                    if let Value::Map(map) = value {
+                        debug!("event name: {:?}", map.ident());
+                        for value in map.values() {
+                            debug!("event value: {:?}", value);
+                        }
+                        debug!("event value by \"from\" ref: {:?}", map.get_by_str("from"));
                     }
-                    DIDEvent::AfterFlipping => {
-                        let data = AfterFlipping::decode_all(&mut buf.as_slice())?;
-                        debug!("after flipping event: {}", data);
+                    // Remove first byte because we added it to decode using transcoder
+                    // without using exact types but we don't need it to decode using exact types.
+                    data.remove(0);
+                }
+                // Decode using exact types.
+                {
+                    let event: DIDEvent = DIDEvent::from(data[0]);
+                    let mut buf = vec![0; data.len() - 1];
+                    buf.copy_from_slice(&data[1..]);
+                    match event {
+                        DIDEvent::BeforeFlipping => {
+                            let data = BeforeFlipping::decode_all(&mut buf.as_slice())?;
+                            debug!("before flipping event: {}", data);
+                        }
+                        DIDEvent::AfterFlipping => {
+                            let data = AfterFlipping::decode_all(&mut buf.as_slice())?;
+                            debug!("after flipping event: {}", data);
+                        }
                     }
                 }
             }
