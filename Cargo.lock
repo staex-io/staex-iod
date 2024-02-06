@@ -3653,6 +3653,7 @@ dependencies = [
  "serde",
  "serde_json",
  "subxt 0.34.0",
+ "subxt-signer 0.34.0",
  "tokio",
  "toml 0.8.10",
 ]

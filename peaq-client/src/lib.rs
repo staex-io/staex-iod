@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use subxt::{
     backend::{legacy::LegacyRpcMethods, rpc},
     error::{RpcError, TransactionError},
@@ -8,9 +6,7 @@ use subxt::{
     utils::AccountId32,
     OnlineClient, PolkadotConfig,
 };
-use subxt_signer::{bip39, sr25519::Keypair};
-
-const TESTNET_RPC_URL: &str = "wss://wsspc1-qa.agung.peaq.network";
+use subxt_signer::sr25519::Keypair;
 
 pub type Error = Box<dyn std::error::Error>;
 
@@ -22,11 +18,10 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(seed: &str) -> Result<Self, Error> {
-        let api = OnlineClient::<PolkadotConfig>::from_url(TESTNET_RPC_URL).await?;
-        let rpc = rpc::RpcClient::from_url(TESTNET_RPC_URL).await?;
+    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
+        let api = OnlineClient::<PolkadotConfig>::from_url(rpc_url).await?;
+        let rpc = rpc::RpcClient::from_url(rpc_url).await?;
         let rpc_legacy: LegacyRpcMethods<PolkadotConfig> = LegacyRpcMethods::new(rpc.clone());
-        let keypair = Keypair::from_phrase(&bip39::Mnemonic::from_str(seed)?, None)?;
         Ok(Self {
             api,
             rpc_legacy,
@@ -53,6 +48,37 @@ impl Client {
         let call = self.peaq_did_api.read_attribute(self.address(), name.as_bytes().to_vec());
         let tx = self.submit_tx(&call, &self.keypair).await?;
         self.process_events(tx, filter).await
+    }
+
+    pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
+        let best_block = self
+            .rpc_legacy
+            .chain_get_block_hash(None)
+            .await?
+            .ok_or(subxt::Error::Other("best block is not found".into()))?;
+        let balance_address = peaq_gen::api::storage().system().account(address);
+        let info = self.api.storage().at(best_block).fetch(&balance_address).await?;
+        if let Some(info) = info {
+            return Ok(info.data.free);
+        }
+        // Account is not initialized yet.
+        Ok(0)
+    }
+
+    pub async fn transfer<S>(
+        &self,
+        amount: u128,
+        address: AccountId32,
+        signer: &S,
+    ) -> Result<(), Error>
+    where
+        S: Signer<PolkadotConfig>,
+    {
+        let tx = peaq_gen::api::tx()
+            .balances()
+            .transfer_allow_death(subxt::utils::MultiAddress::Id(address), amount);
+        self.submit_tx(&tx, signer).await?;
+        Ok(())
     }
 
     async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(

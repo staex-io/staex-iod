@@ -7,6 +7,7 @@ edition = "2021"
 peaq-client = { path = "../peaq-client" }
 peaq-gen = { path = "../peaq-gen" }
 subxt = { workspace = true }
+subxt-signer = { workspace = true }
 tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread"], default-features = false }
 serde = { version = "1.0.196", features = [], default-features = false }
 serde_json = { version = "1.0.113", features = [], default-features = false }

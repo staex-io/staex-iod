@@ -1,7 +1,7 @@
 update:
-	subxt metadata -f bytes --url https://rpcpc1-qa.agung.peaq.network \
+	subxt metadata -f bytes --url $(url) \
 		> assets/peaq.metadata.scale
-	subxt metadata -f json --url https://rpcpc1-qa.agung.peaq.network \
+	subxt metadata -f json --url $(url) \
 		> assets/peaq.metadata.json
 	subxt codegen --file assets/peaq.metadata.scale \
 		--no-docs | \
