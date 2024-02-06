@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use log::Level;
-use subxt::utils::AccountId32;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct Config {
@@ -26,8 +25,8 @@ impl Default for Config {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) enum SignerType {
+    Seed,
     SecretUri,
-    Phrase,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -50,8 +49,6 @@ impl Default for Signer {
 pub(crate) struct DID {
     pub(crate) sync: bool,
     pub(crate) explorer: bool,
-    pub(crate) contract_address: AccountId32,
-    pub(crate) metadata_path: String,
     pub(crate) attributes: Attributes,
 }
 
@@ -60,8 +57,6 @@ impl Default for DID {
         Self {
             sync: true,
             explorer: true,
-            contract_address: "5H4UGYpLFL2aobsv71CsiFwfcXe9yoSMGtrc6VENGzGRyQZa".parse().unwrap(),
-            metadata_path: "assets/did.metadata.json".to_string(),
             attributes: Attributes::default(),
         }
     }
@@ -80,7 +75,7 @@ pub(crate) struct Attributes {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct Faucet {
-    pub(crate) secret_uri: String,
+    pub(crate) signer: Signer,
     // We store amount in Planck.
     pub(crate) amount: u64,
 }
@@ -88,7 +83,10 @@ pub(crate) struct Faucet {
 impl Default for Faucet {
     fn default() -> Self {
         Self {
-            secret_uri: "//Alice".to_string(),
+            signer: Signer {
+                typ: SignerType::SecretUri,
+                val: "//Alice".to_string(),
+            },
             amount: 100_000,
         }
     }

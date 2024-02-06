@@ -50,6 +50,17 @@ impl Client {
         self.process_events(tx, filter).await
     }
 
+    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+        let call = self.peaq_did_api.update_attribute(
+            self.address(),
+            name.as_bytes().to_vec(),
+            value,
+            None,
+        );
+        self.submit_tx(&call, &self.keypair).await?;
+        Ok(())
+    }
+
     pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
         let best_block = self
             .rpc_legacy

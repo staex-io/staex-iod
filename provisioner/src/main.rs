@@ -13,20 +13,30 @@ use subxt::{
 };
 use subxt_signer::{bip39, sr25519::Keypair, SecretUri};
 
-use crate::{balance::Balance, config::Config};
+use crate::config::Config;
 
-mod balance;
 mod config;
+
+const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
 
 type Error = Box<dyn std::error::Error>;
 
+enum SyncState {
+    Ok,
+    Outdated,
+    NotCreated,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(clippy::upper_case_acronyms)]
-struct DID {
-    field_1: u8,
-    field_2: String,
-    field_3: u64,
-    field_4: bool,
+enum DID {
+    #[serde(rename = "lowercase")]
+    V1 {
+        data_type: String,
+        location: String,
+        price_access: String,
+        pin_access: String,
+    },
 }
 
 /// Command line utility to interact with StaexIoD provisioner.
@@ -75,23 +85,23 @@ async fn main() -> Result<(), Error> {
         let cfg: config::Config = toml::from_str(&buf)?;
         Ok(cfg)
     }()?;
-    env_logger::builder().filter_level(cfg.log_level.parse::<Level>()?.to_level_filter()).init();
-    match cli.command {
-        Commands::NewAccount {} => {
-            let phrase = bip39::Mnemonic::generate(12)?;
-            let keypair = Keypair::from_phrase(&phrase, None)?;
-            let account_id: AccountId32 =
-                <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-            eprintln!("Seed phrase: {}", phrase);
-            eprintln!("Address: {}", account_id);
-            return Ok(());
-        }
-        _ => (),
+    env_logger::builder()
+        .filter_level(cfg.log_level.parse::<Level>()?.to_level_filter())
+        .filter_module("rustls", log::LevelFilter::Off)
+        .init();
+    if let Commands::NewAccount {} = cli.command {
+        let phrase = bip39::Mnemonic::generate(12)?;
+        let keypair = Keypair::from_phrase(&phrase, None)?;
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        eprintln!("Seed phrase: {}", phrase);
+        eprintln!("Address: {}", account_id);
+        return Ok(());
     }
     let app: App = App::new(cfg).await?;
     match cli.command {
         Commands::Run {} => {
-            // app.run().await?;
+            app.run().await?;
         }
         Commands::Faucet { address } => {
             app.faucet(address).await?;
@@ -104,71 +114,100 @@ async fn main() -> Result<(), Error> {
 struct App {
     peaq_client: peaq_client::Client,
     faucet: Faucet,
+    did: config::DID,
 }
 
 impl App {
     async fn new(cfg: Config) -> Result<Self, Error> {
-        let keypair = match cfg.signer.typ {
-            config::SignerType::SecretUri => {
-                Keypair::from_uri(&SecretUri::from_str(&cfg.signer.val)?)?
-            }
-            config::SignerType::Phrase => {
-                Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.signer.val)?, None)?
-            }
-        };
+        let keypair = get_keypair(&cfg.signer)?;
         Ok(Self {
             peaq_client: peaq_client::Client::new(&cfg.rpc_url, keypair).await?,
             faucet: cfg.faucet,
+            did: cfg.did,
         })
     }
 
-    async fn run() -> Result<(), Error> {
-        todo!()
+    async fn run(&self) -> Result<(), Error> {
+        info!("starting to get on-chain did information");
+        let did: Option<DID> =
+            self.peaq_client.read_attribute::<DID, _>(DID_ATTRIBUTE_NAME, Some(filter)).await?;
+        let sync_state: SyncState = {
+            if let Some(did) = did {
+                match did {
+                    DID::V1 {
+                        data_type,
+                        location,
+                        price_access,
+                        pin_access,
+                    } => {
+                        if data_type != self.did.attributes.data_type
+                            || location != self.did.attributes.location
+                            || price_access != self.did.attributes.price_access
+                            || pin_access != self.did.attributes.pin_access
+                        {
+                            SyncState::Outdated
+                        } else {
+                            SyncState::Ok
+                        }
+                    }
+                }
+            } else {
+                SyncState::NotCreated
+            }
+        };
+        match sync_state {
+            SyncState::Ok => info!("on-chain did is up to date"),
+            SyncState::Outdated => {
+                info!("on-chain did is outdated; starting to sync it");
+                let value = self.prepare_did()?;
+                self.peaq_client.update_attribute(DID_ATTRIBUTE_NAME, value).await?;
+            }
+            SyncState::NotCreated => {
+                info!("on-chain did is not created");
+                let value = self.prepare_did()?;
+                self.peaq_client.add_attribute(DID_ATTRIBUTE_NAME, value).await?;
+            }
+        }
+        Ok(())
     }
 
     async fn faucet(&self, account_id: AccountId32) -> Result<(), Error> {
-        let faucet = Keypair::from_uri(&SecretUri::from_str(&self.faucet.secret_uri)?)?;
+        let signer = get_keypair(&self.faucet.signer)?;
         let faucet_account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&faucet);
-        let raw_balance = self.peaq_client.get_balance(&faucet_account_id).await?;
-        let balance = Balance::from_planck(raw_balance);
-        info!("faucet balance: {}: {}", account_id, balance.as_dot());
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&signer);
+        let balance = self.peaq_client.get_balance(&faucet_account_id).await?;
+        info!("faucet balance: {}: {}", faucet_account_id, balance,);
 
-        let raw_balance = self.peaq_client.get_balance(&account_id).await?;
-        let balance = Balance::from_planck(raw_balance);
-        info!("address balance before: {}", balance.as_dot());
+        let balance = self.peaq_client.get_balance(&account_id).await?;
+        info!("address balance before: {}", balance);
 
-        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone(), &faucet).await?;
+        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone(), &signer).await?;
 
-        let raw_balance = self.peaq_client.get_balance(&account_id).await?;
-        let balance = Balance::from_planck(raw_balance);
-        info!("address balance after: {}", balance.as_dot());
+        let balance = self.peaq_client.get_balance(&account_id).await?;
+        info!("address balance after: {}", balance);
         Ok(())
+    }
+
+    fn prepare_did(&self) -> Result<Vec<u8>, Error> {
+        let did = DID::V1 {
+            data_type: self.did.attributes.data_type.clone(),
+            location: self.did.attributes.location.clone(),
+            pin_access: self.did.attributes.pin_access.clone(),
+            price_access: self.did.attributes.price_access.clone(),
+        };
+        let value = serde_json::to_vec(&did)?;
+        Ok(value)
     }
 }
 
-// let client = peaq_client::Client::new("").await.unwrap();
-
-// // Save DID.
-// {
-//     eprintln!("starting to add attribute on-chain");
-//     let did = DID {
-//         field_1: 69,
-//         field_2: String::from("finally"),
-//         field_3: 96,
-//         field_4: false,
-//     };
-//     let value = serde_json::to_vec(&did).unwrap();
-//     client.add_attribute("staex-ioa", value).await.unwrap();
-// }
-// // Get DID.
-// {
-//     eprintln!("starting to read attribute on-chain");
-//     let did: Option<DID> =
-//         client.read_attribute::<DID, _>("staex-ioa", Some(filter)).await.unwrap();
-//     eprintln!("{:?}", did)
-// }
-// }
+fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
+    match cfg.typ {
+        config::SignerType::Seed => {
+            Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
+        }
+        config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
+    }
+}
 
 fn filter(event: EventDetails<PolkadotConfig>) -> Option<DID> {
     if event.variant_name() == AttributeRead::EVENT {
