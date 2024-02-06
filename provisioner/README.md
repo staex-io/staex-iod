@@ -38,3 +38,7 @@ location = ""
 price_access = ""
 pin_access = ""
 ```
+
+### ink! smart contracts research
+
+In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink! smart contracts located.

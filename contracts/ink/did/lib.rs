@@ -100,7 +100,7 @@ mod did {
                 .expect("instantiate failed")
                 .account_id;
 
-            let get = build_message::<DidRef>(contract_account_id.clone()).call(|did| did.get());
+            let get = build_message::<DidRef>(contract_account_id).call(|did| did.get());
             let get_result = client.call_dry_run(&ink_e2e::alice(), &get, 0, None).await;
             assert!(matches!(get_result.return_value(), false));
 
@@ -116,15 +116,15 @@ mod did {
                 .expect("instantiate failed")
                 .account_id;
 
-            let get = build_message::<DidRef>(contract_account_id.clone()).call(|did| did.get());
+            let get = build_message::<DidRef>(contract_account_id).call(|did| did.get());
             let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
             assert!(matches!(get_result.return_value(), false));
 
-            let flip = build_message::<DidRef>(contract_account_id.clone()).call(|did| did.flip());
+            let flip = build_message::<DidRef>(contract_account_id).call(|did| did.flip());
             let _flip_result =
                 client.call(&ink_e2e::bob(), flip, 0, None).await.expect("flip failed");
 
-            let get = build_message::<DidRef>(contract_account_id.clone()).call(|did| did.get());
+            let get = build_message::<DidRef>(contract_account_id).call(|did| did.get());
             let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
             assert!(matches!(get_result.return_value(), true));
 
