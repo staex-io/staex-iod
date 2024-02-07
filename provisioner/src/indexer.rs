@@ -1,44 +1,38 @@
-use std::{borrow::Cow, str::from_utf8, time::Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use log::{debug, error};
+use log::debug;
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
-use sqlx::{migrate::Migrate, Connection, SqliteConnection};
+use sqlx::{Connection, SqliteConnection};
 use subxt::{
     events::{EventDetails, StaticEvent},
     PolkadotConfig,
 };
 
-use crate::{config::Config, Error};
+use crate::{
+    config::{self, Config},
+    Error, DID_ATTRIBUTE_NAME,
+};
 
-pub(crate) async fn indexer(cfg: Config) {
-    tokio::spawn(async move {
-        let indexer = match Indexer::new(cfg).await {
-            Ok(indexer) => indexer,
-            Err(e) => {
-                error!("failed to init indexer: {}", e);
-                return;
-            }
-        };
-        if let Err(e) = indexer.run().await {
-            error!("failed to run indexer: {}", e);
-        }
-    });
+pub(crate) async fn run(cfg: Config) -> Result<(), Error> {
+    let mut indexer = Indexer::new(&cfg).await?;
+    indexer.run(cfg.indexer.from_block).await
 }
 
 struct Indexer {
     peaq_client: Client,
+    saver: Database,
 }
 
 impl Indexer {
-    async fn new(cfg: Config) -> Result<Self, Error> {
+    async fn new(cfg: &Config) -> Result<Self, Error> {
         let peaq_client = peaq_client::Client::new(&cfg.rpc_url).await?;
-        Ok(Self { peaq_client })
+        let saver = Database::new(&cfg.indexer).await?;
+        Ok(Self { peaq_client, saver })
     }
 
-    async fn run(&self) -> Result<(), Error> {
-        let saver = Database::new().await?;
-        let mut current_block_index: u64 = 1713467;
+    async fn run(&mut self, from_block: u64) -> Result<(), Error> {
+        let mut current_block_index: u64 = from_block;
         loop {
             debug!("get events in {} block", current_block_index);
             let events = self.peaq_client.get_events_in_block(current_block_index).await?;
@@ -46,7 +40,7 @@ impl Indexer {
                 Some(events) => events,
                 None => {
                     debug!("indexer synced all blocks; waiting for new");
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    tokio::time::sleep(Duration::from_secs(3)).await;
                     continue;
                 }
             };
@@ -59,7 +53,7 @@ impl Indexer {
         }
     }
 
-    async fn process_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
+    async fn process_event(&mut self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
         if event.pallet_name() != AttributeAdded::PALLET {
             return Ok(());
         }
@@ -71,39 +65,47 @@ impl Indexer {
         }
     }
 
-    async fn process_added_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
+    async fn process_added_event(
+        &mut self,
+        event: EventDetails<PolkadotConfig>,
+    ) -> Result<(), Error> {
         let event = event.as_event::<AttributeAdded>()?.ok_or_else::<Error, _>(|| "".into())?;
-        eprintln!("ADDED");
-        eprintln!("{:?}", event.0.to_string());
-        eprintln!("{:?}", event.1.to_string());
-        eprintln!("Name: {:?}", from_utf8(&event.2));
-        eprintln!("Value: {:?}", from_utf8(&event.3));
-        Ok(())
+        if event.2.ne(DID_ATTRIBUTE_NAME.as_bytes()) {
+            return Ok(());
+        }
+        let address = &event.1.to_string();
+        debug!("added event received for {}", address);
+        self.saver.save(address, event.3).await
     }
 
     async fn process_updated_event(
-        &self,
+        &mut self,
         event: EventDetails<PolkadotConfig>,
     ) -> Result<(), Error> {
         let event = event
             .as_event::<AttributeUpdated>()?
             .ok_or_else::<Error, _>(|| "event is not AttributeUpdated".into())?;
-        eprintln!("UPDATED");
-        eprintln!("Name: {:?}", from_utf8(&event.2));
-        eprintln!("Value: {:?}", from_utf8(&event.3));
-        Ok(())
+        if event.2.ne(DID_ATTRIBUTE_NAME.as_bytes()) {
+            return Ok(());
+        }
+        let address = &event.1.to_string();
+        debug!("updated event received for {}", address);
+        self.saver.save(address, event.3).await
     }
 
     async fn process_removed_event(
-        &self,
+        &mut self,
         event: EventDetails<PolkadotConfig>,
     ) -> Result<(), Error> {
         let event = event
             .as_event::<AttributeRemoved>()?
             .ok_or_else::<Error, _>(|| "event is not AttributeRemoved".into())?;
-        eprintln!("REMOVED");
-        eprintln!("Name: {:?}", from_utf8(&event.2));
-        Ok(())
+        if event.2.ne(DID_ATTRIBUTE_NAME.as_bytes()) {
+            return Ok(());
+        }
+        let address = &event.1.to_string();
+        debug!("remove event received for {}", address);
+        self.saver.delete(address).await
     }
 }
 
@@ -112,29 +114,30 @@ struct Database {
 }
 
 impl Database {
-    async fn new() -> Result<Self, Error> {
-        let mut conn = SqliteConnection::connect("sqlite::memory:").await?;
+    async fn new(cfg: &config::Indexer) -> Result<Self, Error> {
+        let mut conn = SqliteConnection::connect(&cfg.dsn).await?;
         conn.ping().await?;
 
-        sqlx::migrate!("./migrations/");
+        let migrator = sqlx::migrate!("./migrations/");
+        migrator.run_direct(&mut conn).await?;
 
         Ok(Self { conn })
     }
 }
 
-// todo: sql-formatter
-// todo: sql-formatter
-// todo: sql-formatter
-// todo: sql-formatter
-// todo: sql-formatter
-
 impl Database {
-    async fn save(&mut self, address: &str, value: Vec<u8>) -> Result<(), Error> {
-        sqlx::query("insert into dids (address, value) values (?1, ?2)")
-            .bind(address)
-            .bind(value)
-            .execute(&mut self.conn)
-            .await?;
+    async fn save(&mut self, address: &str, data: Vec<u8>) -> Result<(), Error> {
+        sqlx::query(
+            r#"
+                insert into dids (address, data, updated_at) values (?1, ?2, ?3) 
+                on conflict(address) do update set data = ?2, updated_at = ?3
+            "#,
+        )
+        .bind(address)
+        .bind(data)
+        .bind(SystemTime::now().duration_since(UNIX_EPOCH)?.subsec_millis())
+        .execute(&mut self.conn)
+        .await?;
         Ok(())
     }
 

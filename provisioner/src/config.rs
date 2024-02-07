@@ -9,6 +9,7 @@ pub(crate) struct Config {
     pub(crate) signer: Signer,
     pub(crate) faucet: Faucet,
     pub(crate) did: DID,
+    pub(crate) indexer: Indexer,
 }
 
 impl Default for Config {
@@ -19,6 +20,7 @@ impl Default for Config {
             signer: Default::default(),
             faucet: Default::default(),
             did: Default::default(),
+            indexer: Indexer::default(),
         }
     }
 }
@@ -48,7 +50,6 @@ impl Default for Signer {
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct DID {
     pub(crate) sync: bool,
-    pub(crate) explorer: bool,
     pub(crate) attributes: Attributes,
 }
 
@@ -56,7 +57,6 @@ impl Default for DID {
     fn default() -> Self {
         Self {
             sync: true,
-            explorer: true,
             attributes: Attributes::default(),
         }
     }
@@ -87,7 +87,26 @@ impl Default for Faucet {
                 typ: SignerType::SecretUri,
                 val: "//Alice".to_string(),
             },
-            amount: 100_000,
+            amount: 999993264201726756, // 0.9
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub(crate) struct Indexer {
+    pub(crate) from_block: u64,
+    pub(crate) dsn: String,
+    pub(crate) host: String,
+    pub(crate) port: u16,
+}
+
+impl Default for Indexer {
+    fn default() -> Self {
+        Self {
+            from_block: 1717233,
+            dsn: "sqlite:staex-iod.sqlite".to_string(),
+            host: "127.0.0.1".to_string(),
+            port: 4698,
         }
     }
 }

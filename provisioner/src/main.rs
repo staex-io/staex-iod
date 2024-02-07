@@ -19,7 +19,7 @@ use crate::config::Config;
 mod config;
 mod indexer;
 
-const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
+pub(crate) const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
 
 pub(crate) type Error = Box<dyn std::error::Error>;
 
@@ -65,9 +65,9 @@ enum Commands {
     Config {},
     /// Run provisioner.
     Run {},
-    /// Create new account.
     /// Run indexer.
     Indexer {},
+    /// Create new account.
     NewAccount {},
     /// Remove on-chain DID.
     SelfRemove {},
@@ -104,13 +104,18 @@ async fn main() -> Result<(), Error> {
             let app: App = App::new(cfg).await?;
             tokio::spawn(async move {
                 if let Err(e) = app.run().await {
-                    error!("failed to run application: {}", e)
+                    error!("failed to run application: {e}")
                 }
-            });
-            tokio::signal::ctrl_c().await?;
+            })
+            .await?;
         }
         Commands::Indexer {} => {
-            indexer::indexer(cfg).await;
+            tokio::spawn(async move {
+                if let Err(e) = indexer::run(cfg).await {
+                    error!("failed to run indexer: {e}");
+                    std::process::exit(1)
+                }
+            });
             tokio::signal::ctrl_c().await?;
         }
         Commands::SelfRemove {} => {
@@ -151,6 +156,13 @@ impl App {
     }
 
     async fn run(&self) -> Result<(), Error> {
+        self.sync().await
+    }
+
+    async fn sync(&self) -> Result<(), Error> {
+        if !self.did.sync {
+            return Ok(());
+        }
         let last_block = self.peaq_client.get_last_block().await?;
         info!(
             "starting to get on-chain did information starting from {} block",
