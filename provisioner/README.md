@@ -23,22 +23,34 @@ typ = "SecretUri"
 val = "//Alice"
 
 [faucet]
-secret_uri = "//Alice"
-amount = 100000
+amount = 999993264201726756
 
-[did]
+[faucet.signer]
+typ = "SecretUri"
+val = "//Alice"
+
+[device]
 sync = true
-explorer = true
-contract_address = "5H4UGYpLFL2aobsv71CsiFwfcXe9yoSMGtrc6VENGzGRyQZa"
-metadata_path = "did.metadata.json"
 
-[did.attributes]
-data_type = ""
-location = ""
-price_access = ""
-pin_access = ""
+[device.attributes]
+data_type = "cctv-camera"
+location = "40.1949288120072,44.55177253802097"
+price_access = "42.03995"
+pin_access = "445.12222"
+
+[indexer]
+from_block = 1717233
+dsn = "sqlite:staex-iod.sqlite"
+host = "127.0.0.1"
+port = 4698
 ```
 
 ### ink! smart contracts research
 
 In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink! smart contracts located.
+
+### Get devices by HTTP API
+
+```shell
+curl -s X GET 'http://127.0.0.1:4698/devices' | jq
+```
