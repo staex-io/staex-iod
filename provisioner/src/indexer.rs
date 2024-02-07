@@ -135,7 +135,7 @@ impl Database {
         )
         .bind(address)
         .bind(data)
-        .bind(SystemTime::now().duration_since(UNIX_EPOCH)?.subsec_millis())
+        .bind(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
         .execute(&mut self.conn)
         .await?;
         Ok(())
