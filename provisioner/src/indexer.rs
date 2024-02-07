@@ -139,7 +139,7 @@ impl Indexer {
 }
 
 #[derive(sqlx::FromRow)]
-struct StoredDevice {
+struct DatabaseDevice {
     address: String,
     data: Vec<u8>,
     updated_at: i64,
@@ -190,12 +190,14 @@ impl Database {
         Ok(())
     }
 
-    async fn query(&self) -> Result<Vec<StoredDevice>, Error> {
+    async fn query(&self) -> Result<Vec<DatabaseDevice>, Error> {
         let mut conn = self.conn.lock().await;
-        let devices: Vec<StoredDevice> =
-            sqlx::query_as::<_, StoredDevice>("select * from devices limit 1")
-                .fetch_all(&mut *conn)
-                .await?;
+        // Query most fresh devices.
+        let devices: Vec<DatabaseDevice> = sqlx::query_as::<_, DatabaseDevice>(
+            "select * from devices order by updated_at desc limit 1",
+        )
+        .fetch_all(&mut *conn)
+        .await?;
         Ok(devices)
     }
 
