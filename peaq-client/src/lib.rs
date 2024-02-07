@@ -1,7 +1,17 @@
+use std::ops::Deref;
+
+use peaq_gen::api::peaq_did;
 use subxt::{
-    backend::{legacy::LegacyRpcMethods, rpc},
+    backend::{
+        legacy::{rpc_methods::BlockDetails, LegacyRpcMethods},
+        rpc::RpcClient,
+    },
+    blocks::Block,
+    config::Header,
     error::{RpcError, TransactionError},
-    events::EventDetails,
+    events::{EventDetails, Events},
+    ext::{codec::DecodeAll, sp_core::H256},
+    rpc_params,
     tx::{Signer, TxInBlock, TxPayload, TxStatus},
     utils::AccountId32,
     OnlineClient, PolkadotConfig,
@@ -12,21 +22,87 @@ pub type Error = Box<dyn std::error::Error>;
 
 pub struct Client {
     api: OnlineClient<PolkadotConfig>,
+    rpc: RpcClient,
     rpc_legacy: LegacyRpcMethods<PolkadotConfig>,
-    keypair: Keypair,
-    peaq_did_api: peaq_gen::api::peaq_did::calls::TransactionApi,
 }
 
 impl Client {
-    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
+    pub async fn new(rpc_url: &str) -> Result<Self, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(rpc_url).await?;
-        let rpc = rpc::RpcClient::from_url(rpc_url).await?;
+        let rpc = RpcClient::from_url(rpc_url).await?;
         let rpc_legacy: LegacyRpcMethods<PolkadotConfig> = LegacyRpcMethods::new(rpc.clone());
         Ok(Self {
             api,
+            rpc,
             rpc_legacy,
+        })
+    }
+
+    pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
+        let last_block = self.get_last_block().await?;
+        let balance_address = peaq_gen::api::storage().system().account(address);
+        let info =
+            self.api.storage().at(last_block.block.header.hash()).fetch(&balance_address).await?;
+        if let Some(info) = info {
+            return Ok(info.data.free);
+        }
+        // Account is not initialized yet.
+        Ok(0)
+    }
+
+    pub async fn get_block(
+        &self,
+        index: u64,
+    ) -> Result<Option<Block<PolkadotConfig, OnlineClient<PolkadotConfig>>>, Error> {
+        let res: Result<H256, subxt::Error> =
+            self.rpc.request("chain_getBlockHash", rpc_params![index]).await;
+        if let Err(e) = res {
+            match e {
+                subxt::Error::Serialization(_) => return Ok(None),
+                _ => return Err(e.into()),
+            }
+        }
+        let hash = res?;
+        let block = self.api.blocks().at(hash).await?;
+        Ok(Some(block))
+    }
+
+    pub async fn get_events_in_block(
+        &self,
+        index: u64,
+    ) -> Result<Option<Events<PolkadotConfig>>, Error> {
+        let block = self.get_block(index).await?;
+        if let Some(block) = block {
+            let events = block.events().await?;
+            Ok(Some(events))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn get_last_block(&self) -> Result<BlockDetails<PolkadotConfig>, Error> {
+        let block = self
+            .rpc_legacy
+            .chain_get_block(None)
+            .await?
+            .ok_or(subxt::Error::Other("last block is not found".into()))?;
+        Ok(block)
+    }
+}
+
+pub struct SignerClient {
+    client: Client,
+    keypair: Keypair,
+    peaq_did_api: peaq_did::calls::TransactionApi,
+}
+
+impl SignerClient {
+    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
+        let client = Client::new(rpc_url).await?;
+        Ok(Self {
+            client,
             keypair,
-            peaq_did_api: peaq_gen::api::peaq_did::calls::TransactionApi {},
+            peaq_did_api: peaq_did::calls::TransactionApi {},
         })
     }
 
@@ -47,7 +123,25 @@ impl Client {
     {
         let call = self.peaq_did_api.read_attribute(self.address(), name.as_bytes().to_vec());
         let tx = self.submit_tx(&call, &self.keypair).await?;
-        self.process_events(tx, filter).await
+        match self.process_events(tx, filter).await {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
+                    // e.as_root_error() doesn't work, so we get second byte
+                    // because it contains error index.
+                    let a = e.bytes()[1..2].to_vec();
+                    // And decode error manually.
+                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
+                    if let peaq_did::Error::AttributeNotFound = did_err {
+                        Ok(None)
+                    } else {
+                        Err(e.into())
+                    }
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
     }
 
     pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
@@ -61,19 +155,10 @@ impl Client {
         Ok(())
     }
 
-    pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
-        let best_block = self
-            .rpc_legacy
-            .chain_get_block_hash(None)
-            .await?
-            .ok_or(subxt::Error::Other("best block is not found".into()))?;
-        let balance_address = peaq_gen::api::storage().system().account(address);
-        let info = self.api.storage().at(best_block).fetch(&balance_address).await?;
-        if let Some(info) = info {
-            return Ok(info.data.free);
-        }
-        // Account is not initialized yet.
-        Ok(0)
+    pub async fn remove_attribute(&self, name: &str) -> Result<(), Error> {
+        let call = self.peaq_did_api.remove_attribute(self.address(), name.as_bytes().to_vec());
+        self.submit_tx(&call, &self.keypair).await?;
+        Ok(())
     }
 
     pub async fn transfer<S>(
@@ -100,6 +185,7 @@ impl Client {
         let account_id = signer.account_id();
         let account_nonce = self.get_nonce(&account_id).await?;
         let mut tx = self
+            .client
             .api
             .tx()
             .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
@@ -124,13 +210,15 @@ impl Client {
     }
 
     async fn get_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
-        let best_block = self
-            .rpc_legacy
-            .chain_get_block_hash(None)
+        let last_block = self.client.get_last_block().await?;
+        let account_nonce = self
+            .client
+            .api
+            .blocks()
+            .at(last_block.block.header.hash())
             .await?
-            .ok_or(subxt::Error::Other("best block not found".into()))?;
-        let account_nonce =
-            self.api.blocks().at(best_block).await?.account_nonce(account_id).await?;
+            .account_nonce(account_id)
+            .await?;
         Ok(account_nonce)
     }
 
@@ -138,7 +226,7 @@ impl Client {
         &self,
         tx: TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>,
         filter: Option<F>,
-    ) -> Result<Option<T>, Error>
+    ) -> Result<Option<T>, subxt::Error>
     where
         F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
     {
@@ -158,5 +246,12 @@ impl Client {
 
     fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
+    }
+}
+
+impl Deref for SignerClient {
+    type Target = Client;
+    fn deref(&self) -> &Self::Target {
+        &self.client
     }
 }
