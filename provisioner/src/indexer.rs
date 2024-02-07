@@ -1,5 +1,6 @@
 use std::{
     fs::OpenOptions,
+    io::ErrorKind,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -153,7 +154,14 @@ impl Database {
     async fn new(cfg: &config::Indexer) -> Result<Self, Error> {
         // Create file if not exists to be able to open and migrate.
         let file_name = cfg.dsn.split(':').collect::<Vec<&str>>()[1];
-        OpenOptions::new().read(true).write(true).create(true).create_new(true).open(file_name)?;
+        if let Err(e) =
+            OpenOptions::new().read(true).write(true).create(true).create_new(true).open(file_name)
+        {
+            match e.kind() {
+                ErrorKind::AlreadyExists => (),
+                _ => return Err(e.into()),
+            }
+        }
 
         let mut conn = SqliteConnection::connect(&cfg.dsn).await?;
         conn.ping().await?;

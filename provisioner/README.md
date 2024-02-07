@@ -54,3 +54,20 @@ In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink!
 ```shell
 curl -s X GET 'http://127.0.0.1:4698/devices' | jq
 ```
+
+```json
+[
+  {
+    "address": "5CwQRPkqmUg5arWuJtw2qoGRL4oRDjguzmrcrSSsv35Cuv3s",
+    "device": {
+      "v1": {
+        "data_type": "cctv-camera",
+        "location": "40.1949288120072,44.55177253802097",
+        "price_access": "42.03995",
+        "pin_access": "445.12222"
+      }
+    },
+    "updated_at": 1707333061
+  }
+]
+```
