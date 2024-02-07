@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
 use config::Faucet;
-use log::{error, info, warn, Level};
+use log::{error, info, warn, Level, LevelFilter};
 use peaq_gen::api::peaq_did::events::AttributeRead;
 use serde::{Deserialize, Serialize};
 use subxt::{
@@ -93,8 +93,8 @@ async fn main() -> Result<(), Error> {
         Ok(cfg)
     }()?;
     env_logger::builder()
-        .filter_level(cfg.log_level.parse::<Level>()?.to_level_filter())
-        .filter_module("rustls", log::LevelFilter::Off)
+        .filter(None, LevelFilter::Off)
+        .filter_module("provisioner", cfg.log_level.parse::<Level>()?.to_level_filter())
         .init();
     match cli.command {
         Commands::Config {} => {

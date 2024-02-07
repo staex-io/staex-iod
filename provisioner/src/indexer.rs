@@ -1,8 +1,9 @@
-use std::{str::from_utf8, time::Duration};
+use std::{borrow::Cow, str::from_utf8, time::Duration};
 
 use log::{debug, error};
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
+use sqlx::{migrate::Migrate, Connection, SqliteConnection};
 use subxt::{
     events::{EventDetails, StaticEvent},
     PolkadotConfig,
@@ -36,8 +37,10 @@ impl Indexer {
     }
 
     async fn run(&self) -> Result<(), Error> {
+        let saver = Database::new().await?;
         let mut current_block_index: u64 = 1713467;
         loop {
+            debug!("get events in {} block", current_block_index);
             let events = self.peaq_client.get_events_in_block(current_block_index).await?;
             let events = match events {
                 Some(events) => events,
@@ -71,6 +74,8 @@ impl Indexer {
     async fn process_added_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
         let event = event.as_event::<AttributeAdded>()?.ok_or_else::<Error, _>(|| "".into())?;
         eprintln!("ADDED");
+        eprintln!("{:?}", event.0.to_string());
+        eprintln!("{:?}", event.1.to_string());
         eprintln!("Name: {:?}", from_utf8(&event.2));
         eprintln!("Value: {:?}", from_utf8(&event.3));
         Ok(())
@@ -98,6 +103,46 @@ impl Indexer {
             .ok_or_else::<Error, _>(|| "event is not AttributeRemoved".into())?;
         eprintln!("REMOVED");
         eprintln!("Name: {:?}", from_utf8(&event.2));
+        Ok(())
+    }
+}
+
+struct Database {
+    conn: SqliteConnection,
+}
+
+impl Database {
+    async fn new() -> Result<Self, Error> {
+        let mut conn = SqliteConnection::connect("sqlite::memory:").await?;
+        conn.ping().await?;
+
+        sqlx::migrate!("./migrations/");
+
+        Ok(Self { conn })
+    }
+}
+
+// todo: sql-formatter
+// todo: sql-formatter
+// todo: sql-formatter
+// todo: sql-formatter
+// todo: sql-formatter
+
+impl Database {
+    async fn save(&mut self, address: &str, value: Vec<u8>) -> Result<(), Error> {
+        sqlx::query("insert into dids (address, value) values (?1, ?2)")
+            .bind(address)
+            .bind(value)
+            .execute(&mut self.conn)
+            .await?;
+        Ok(())
+    }
+
+    async fn delete(&mut self, address: &str) -> Result<(), Error> {
+        sqlx::query("delete from dids where address = ?1")
+            .bind(address)
+            .execute(&mut self.conn)
+            .await?;
         Ok(())
     }
 }
