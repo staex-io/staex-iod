@@ -2,10 +2,11 @@ use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
 use config::Faucet;
-use log::{info, Level};
+use log::{error, info, warn, Level, LevelFilter};
 use peaq_gen::api::peaq_did::events::AttributeRead;
 use serde::{Deserialize, Serialize};
 use subxt::{
+    config::Header,
     events::{EventDetails, StaticEvent},
     tx::Signer,
     utils::AccountId32,
@@ -16,10 +17,11 @@ use subxt_signer::{bip39, sr25519::Keypair, SecretUri};
 use crate::config::Config;
 
 mod config;
+mod indexer;
 
-const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
+pub(crate) const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
 
-type Error = Box<dyn std::error::Error>;
+pub(crate) type Error = Box<dyn std::error::Error>;
 
 enum SyncState {
     Ok,
@@ -29,14 +31,19 @@ enum SyncState {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(clippy::upper_case_acronyms)]
+#[serde(rename_all = "lowercase")]
 enum DID {
-    #[serde(rename = "lowercase")]
     V1 {
         data_type: String,
         location: String,
         price_access: String,
         pin_access: String,
     },
+}
+
+enum ReadResult {
+    Ok(DID),
+    DecodeError,
 }
 
 /// Command line utility to interact with StaexIoD provisioner.
@@ -58,8 +65,12 @@ enum Commands {
     Config {},
     /// Run provisioner.
     Run {},
+    /// Run indexer.
+    Indexer {},
     /// Create new account.
     NewAccount {},
+    /// Remove on-chain DID.
+    SelfRemove {},
     /// Faucet account.
     Faucet {
         /// Address to send tokens to.
@@ -70,10 +81,6 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-    if let Commands::Config {} = cli.command {
-        eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
-        return Ok(());
-    }
     let cfg: config::Config = || -> Result<config::Config, Error> {
         let buf = match std::fs::read_to_string(cli.config) {
             Ok(buf) => buf,
@@ -86,33 +93,53 @@ async fn main() -> Result<(), Error> {
         Ok(cfg)
     }()?;
     env_logger::builder()
-        .filter_level(cfg.log_level.parse::<Level>()?.to_level_filter())
-        .filter_module("rustls", log::LevelFilter::Off)
+        .filter(None, LevelFilter::Off)
+        .filter_module("provisioner", cfg.log_level.parse::<Level>()?.to_level_filter())
         .init();
-    if let Commands::NewAccount {} = cli.command {
-        let phrase = bip39::Mnemonic::generate(12)?;
-        let keypair = Keypair::from_phrase(&phrase, None)?;
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-        eprintln!("Seed phrase: {}", phrase);
-        eprintln!("Address: {}", account_id);
-        return Ok(());
-    }
-    let app: App = App::new(cfg).await?;
     match cli.command {
+        Commands::Config {} => {
+            eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
+        }
         Commands::Run {} => {
-            app.run().await?;
+            let app: App = App::new(cfg).await?;
+            tokio::spawn(async move {
+                if let Err(e) = app.run().await {
+                    error!("failed to run application: {e}")
+                }
+            })
+            .await?;
+        }
+        Commands::Indexer {} => {
+            tokio::spawn(async move {
+                if let Err(e) = indexer::run(cfg).await {
+                    error!("failed to run indexer: {e}");
+                    std::process::exit(1)
+                }
+            });
+            tokio::signal::ctrl_c().await?;
+        }
+        Commands::SelfRemove {} => {
+            let app: App = App::new(cfg).await?;
+            app.self_remove().await?;
+        }
+        Commands::NewAccount {} => {
+            let phrase = bip39::Mnemonic::generate(12)?;
+            let keypair = Keypair::from_phrase(&phrase, None)?;
+            let account_id: AccountId32 =
+                <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+            eprintln!("Seed phrase: {}", phrase);
+            eprintln!("Address: {}", account_id);
         }
         Commands::Faucet { address } => {
+            let app: App = App::new(cfg).await?;
             app.faucet(address).await?;
         }
-        _ => (),
-    }
+    };
     Ok(())
 }
 
 struct App {
-    peaq_client: peaq_client::Client,
+    peaq_client: peaq_client::SignerClient,
     faucet: Faucet,
     did: config::DID,
 }
@@ -120,52 +147,45 @@ struct App {
 impl App {
     async fn new(cfg: Config) -> Result<Self, Error> {
         let keypair = get_keypair(&cfg.signer)?;
+        let peaq_client = peaq_client::SignerClient::new(&cfg.rpc_url, keypair).await?;
         Ok(Self {
-            peaq_client: peaq_client::Client::new(&cfg.rpc_url, keypair).await?,
+            peaq_client,
             faucet: cfg.faucet,
             did: cfg.did,
         })
     }
 
     async fn run(&self) -> Result<(), Error> {
-        info!("starting to get on-chain did information");
-        let did: Option<DID> =
-            self.peaq_client.read_attribute::<DID, _>(DID_ATTRIBUTE_NAME, Some(filter)).await?;
-        let sync_state: SyncState = {
-            if let Some(did) = did {
-                match did {
-                    DID::V1 {
-                        data_type,
-                        location,
-                        price_access,
-                        pin_access,
-                    } => {
-                        if data_type != self.did.attributes.data_type
-                            || location != self.did.attributes.location
-                            || price_access != self.did.attributes.price_access
-                            || pin_access != self.did.attributes.pin_access
-                        {
-                            SyncState::Outdated
-                        } else {
-                            SyncState::Ok
-                        }
-                    }
-                }
-            } else {
-                SyncState::NotCreated
-            }
-        };
+        self.sync().await
+    }
+
+    async fn sync(&self) -> Result<(), Error> {
+        if !self.did.sync {
+            return Ok(());
+        }
+        let last_block = self.peaq_client.get_last_block().await?;
+        info!(
+            "starting to get on-chain did information starting from {} block",
+            last_block.block.header.number()
+        );
+        let read_result: Option<ReadResult> = self
+            .peaq_client
+            .read_attribute::<ReadResult, _>(DID_ATTRIBUTE_NAME, Some(filter))
+            .await?;
+        let sync_state = get_sync_state(read_result, &self.did);
         match sync_state {
             SyncState::Ok => info!("on-chain did is up to date"),
             SyncState::Outdated => {
                 info!("on-chain did is outdated; starting to sync it");
                 let value = self.prepare_did()?;
                 self.peaq_client.update_attribute(DID_ATTRIBUTE_NAME, value).await?;
+                info!("successfully updated on-chain did");
             }
             SyncState::NotCreated => {
                 info!("on-chain did is not created");
                 let value = self.prepare_did()?;
                 self.peaq_client.add_attribute(DID_ATTRIBUTE_NAME, value).await?;
+                info!("successfully created on-chain did");
             }
         }
         Ok(())
@@ -186,6 +206,11 @@ impl App {
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance after: {}", balance);
         Ok(())
+    }
+
+    async fn self_remove(&self) -> Result<(), Error> {
+        info!("starting to do self-remove");
+        self.peaq_client.remove_attribute(DID_ATTRIBUTE_NAME).await
     }
 
     fn prepare_did(&self) -> Result<Vec<u8>, Error> {
@@ -209,14 +234,46 @@ fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
     }
 }
 
-fn filter(event: EventDetails<PolkadotConfig>) -> Option<DID> {
+fn filter(event: EventDetails<PolkadotConfig>) -> Option<ReadResult> {
     if event.variant_name() == AttributeRead::EVENT {
         if let Ok(Some(evt)) = event.as_event::<AttributeRead>() {
             match serde_json::from_slice(&evt.0.value) {
-                Ok(did) => return Some(did),
-                Err(_) => return None,
+                Ok(did) => return Some(ReadResult::Ok(did)),
+                Err(e) => {
+                    // Looks like we have outdated format.
+                    warn!("failed to decode on-chain attribute: {}", e);
+                    return Some(ReadResult::DecodeError);
+                }
             }
         }
     }
     None
+}
+
+fn get_sync_state(read_result: Option<ReadResult>, expected: &config::DID) -> SyncState {
+    if read_result.is_none() {
+        return SyncState::NotCreated;
+    }
+    let read_result = read_result.unwrap();
+    match read_result {
+        ReadResult::DecodeError => SyncState::Outdated,
+        ReadResult::Ok(did) => match did {
+            DID::V1 {
+                data_type,
+                location,
+                price_access,
+                pin_access,
+            } => {
+                if data_type != expected.attributes.data_type
+                    || location != expected.attributes.location
+                    || price_access != expected.attributes.price_access
+                    || pin_access != expected.attributes.pin_access
+                {
+                    SyncState::Outdated
+                } else {
+                    SyncState::Ok
+                }
+            }
+        },
+    }
 }
