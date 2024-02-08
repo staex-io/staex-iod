@@ -12,7 +12,11 @@ use subxt::{
     utils::AccountId32,
     PolkadotConfig,
 };
-use subxt_signer::{bip39, sr25519::Keypair, SecretUri};
+use subxt_signer::{
+    bip39::{self, Mnemonic},
+    sr25519::Keypair,
+    SecretUri,
+};
 
 use crate::config::Config;
 
@@ -31,7 +35,7 @@ enum SyncState {
 
 pub(crate) const V1: &str = "v1";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Device {
     V1(DeviceV1),
@@ -45,7 +49,7 @@ impl Device {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub(crate) struct DeviceV1 {
     data_type: String,
     location: String,
@@ -130,11 +134,8 @@ async fn main() -> Result<(), Error> {
             app.self_remove().await?;
         }
         Commands::NewAccount {} => {
-            let phrase = bip39::Mnemonic::generate(12)?;
-            let keypair = Keypair::from_phrase(&phrase, None)?;
-            let account_id: AccountId32 =
-                <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-            eprintln!("Seed phrase: {}", phrase);
+            let (phrase, _, account_id) = generate_account()?;
+            eprintln!("Phrase: {}", phrase);
             eprintln!("Address: {}", account_id);
         }
         Commands::Faucet { address } => {
@@ -232,9 +233,17 @@ impl App {
     }
 }
 
+pub(crate) fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
+    let phrase = bip39::Mnemonic::generate(12)?;
+    let keypair = Keypair::from_phrase(&phrase, None)?;
+    let account_id: AccountId32 =
+        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+    Ok((phrase, keypair, account_id))
+}
+
 fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
     match cfg.typ {
-        config::SignerType::Seed => {
+        config::SignerType::Phrase => {
             Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
         }
         config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),

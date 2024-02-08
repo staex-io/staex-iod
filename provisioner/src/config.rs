@@ -27,7 +27,7 @@ impl Default for Config {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) enum SignerType {
-    Seed,
+    Phrase,
     SecretUri,
 }
 

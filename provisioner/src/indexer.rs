@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::OpenOptions,
     io::ErrorKind,
     sync::Arc,
@@ -6,6 +7,7 @@ use std::{
 };
 
 use axum::{
+    extract::Query,
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
@@ -15,7 +17,7 @@ use log::{debug, error, info, trace};
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
 use serde::{Deserialize, Serialize};
-use sqlx::{Connection, SqliteConnection};
+use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{
     events::{EventDetails, StaticEvent},
     PolkadotConfig,
@@ -198,14 +200,33 @@ impl Database {
         Ok(())
     }
 
-    async fn query(&self) -> Result<Vec<DatabaseDevice>, Error> {
+    async fn query(
+        &self,
+        filters: HashMap<String, String>,
+        limit: u32,
+        offset: u32,
+    ) -> Result<Vec<DatabaseDevice>, Error> {
+        let mut query: QueryBuilder<sqlx::Sqlite> = {
+            let mut query: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new("select * from devices");
+            let filters_len = filters.len();
+            if filters_len != 0 {
+                query.push(" where ");
+                for (i, (field, value)) in filters.iter().enumerate() {
+                    Self::is_field_allowed(field)?;
+                    if i != 0 {
+                        query.push(" AND ");
+                    }
+                    query.push(format!("json_extract(data, '$.{}') = ", field));
+                    query.push_bind(value);
+                }
+            }
+            query.push(" order by updated_at desc");
+            query.push(" limit ").push_bind(limit).push(" offset ").push_bind(offset);
+            query
+        };
+        let query = query.build_query_as::<DatabaseDevice>();
         let mut conn = self.conn.lock().await;
-        // Query most fresh devices.
-        let devices: Vec<DatabaseDevice> = sqlx::query_as::<_, DatabaseDevice>(
-            "select * from devices order by updated_at desc limit 1",
-        )
-        .fetch_all(&mut *conn)
-        .await?;
+        let devices = query.fetch_all(&mut *conn).await?;
         Ok(devices)
     }
 
@@ -216,6 +237,15 @@ impl Database {
             .execute(&mut *conn)
             .await?;
         Ok(())
+    }
+
+    // I didn't find a way to properly bind JSON field name to sql query,
+    // so it is required to manually check for allowed fields.
+    fn is_field_allowed(field: &str) -> Result<(), Error> {
+        if matches!(field, "data_type" | "location" | "price_access" | "price_pin") {
+            return Ok(());
+        }
+        Err("received untrusted filter".into())
     }
 }
 
@@ -255,6 +285,14 @@ async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error>
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct GetDevicesParams {
+    #[serde(flatten)]
+    filters: HashMap<String, String>,
+    limit: u32,
+    offset: u32,
+}
+
 #[derive(Serialize, Deserialize)]
 struct DeviceResponse {
     address: String,
@@ -264,9 +302,15 @@ struct DeviceResponse {
 }
 
 async fn get_devices(
+    Query(params): Query<GetDevicesParams>,
     Extension(database): Extension<Database>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
-    let internal_devices = database.query().await?;
+    for field in params.filters.keys() {
+        if Database::is_field_allowed(field).is_err() {
+            return Err(format!("{} field is not supporting for filtering", field).into());
+        }
+    }
+    let internal_devices = database.query(params.filters, params.limit, params.offset).await?;
     let mut external_devices: Vec<DeviceResponse> = Vec::with_capacity(internal_devices.len());
     for internal_device in &internal_devices {
         let device: serde_json::Value = {
