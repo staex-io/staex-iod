@@ -8,7 +8,7 @@ pub(crate) struct Config {
     pub(crate) rpc_url: String,
     pub(crate) signer: Signer,
     pub(crate) faucet: Faucet,
-    pub(crate) did: DID,
+    pub(crate) device: Device,
     pub(crate) indexer: Indexer,
 }
 
@@ -19,7 +19,7 @@ impl Default for Config {
             rpc_url: "ws://127.0.0.1:9944".to_string(),
             signer: Default::default(),
             faucet: Default::default(),
-            did: Default::default(),
+            device: Default::default(),
             indexer: Indexer::default(),
         }
     }
@@ -27,7 +27,7 @@ impl Default for Config {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) enum SignerType {
-    Seed,
+    Phrase,
     SecretUri,
 }
 
@@ -46,14 +46,13 @@ impl Default for Signer {
     }
 }
 
-#[allow(clippy::upper_case_acronyms)]
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub(crate) struct DID {
+pub(crate) struct Device {
     pub(crate) sync: bool,
     pub(crate) attributes: Attributes,
 }
 
-impl Default for DID {
+impl Default for Device {
     fn default() -> Self {
         Self {
             sync: true,
@@ -62,15 +61,27 @@ impl Default for DID {
     }
 }
 
-// All fields are required attributes for every DID.
+// All fields are required attributes for every device.
 // Only "additional" is additional.
-#[derive(serde::Serialize, serde::Deserialize, Clone, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct Attributes {
     pub(crate) data_type: String,
     pub(crate) location: String,
     pub(crate) price_access: String,
     pub(crate) pin_access: String,
     pub(crate) additional: Option<HashMap<String, toml::Value>>,
+}
+
+impl Default for Attributes {
+    fn default() -> Self {
+        Self {
+            data_type: "cctv-camera".to_string(),
+            location: "40.1949288120072,44.55177253802097".to_string(),
+            price_access: "42.03995".to_string(),
+            pin_access: "445.12222".to_string(),
+            additional: None,
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -103,7 +114,7 @@ pub(crate) struct Indexer {
 impl Default for Indexer {
     fn default() -> Self {
         Self {
-            from_block: 1717233,
+            from_block: 1717920,
             dsn: "sqlite:staex-iod.sqlite".to_string(),
             host: "127.0.0.1".to_string(),
             port: 4698,

@@ -12,14 +12,18 @@ use subxt::{
     utils::AccountId32,
     PolkadotConfig,
 };
-use subxt_signer::{bip39, sr25519::Keypair, SecretUri};
+use subxt_signer::{
+    bip39::{self, Mnemonic},
+    sr25519::Keypair,
+    SecretUri,
+};
 
 use crate::config::Config;
 
 mod config;
 mod indexer;
 
-pub(crate) const DID_ATTRIBUTE_NAME: &str = "staex-ioa";
+pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-ioa-device";
 
 pub(crate) type Error = Box<dyn std::error::Error>;
 
@@ -29,20 +33,32 @@ enum SyncState {
     NotCreated,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[allow(clippy::upper_case_acronyms)]
+pub(crate) const V1: &str = "v1";
+
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum DID {
-    V1 {
-        data_type: String,
-        location: String,
-        price_access: String,
-        pin_access: String,
-    },
+pub(crate) enum Device {
+    V1(DeviceV1),
+}
+
+impl Device {
+    pub(crate) fn version(&self) -> &str {
+        match self {
+            Device::V1(_) => V1,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub(crate) struct DeviceV1 {
+    data_type: String,
+    location: String,
+    price_access: String,
+    pin_access: String,
 }
 
 enum ReadResult {
-    Ok(DID),
+    Ok(Device),
     DecodeError,
 }
 
@@ -69,7 +85,7 @@ enum Commands {
     Indexer {},
     /// Create new account.
     NewAccount {},
-    /// Remove on-chain DID.
+    /// Remove on-chain device.
     SelfRemove {},
     /// Faucet account.
     Faucet {
@@ -110,12 +126,7 @@ async fn main() -> Result<(), Error> {
             .await?;
         }
         Commands::Indexer {} => {
-            tokio::spawn(async move {
-                if let Err(e) = indexer::run(cfg).await {
-                    error!("failed to run indexer: {e}");
-                    std::process::exit(1)
-                }
-            });
+            indexer::run(cfg).await?;
             tokio::signal::ctrl_c().await?;
         }
         Commands::SelfRemove {} => {
@@ -123,11 +134,8 @@ async fn main() -> Result<(), Error> {
             app.self_remove().await?;
         }
         Commands::NewAccount {} => {
-            let phrase = bip39::Mnemonic::generate(12)?;
-            let keypair = Keypair::from_phrase(&phrase, None)?;
-            let account_id: AccountId32 =
-                <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-            eprintln!("Seed phrase: {}", phrase);
+            let (phrase, _, account_id) = generate_account()?;
+            eprintln!("Phrase: {}", phrase);
             eprintln!("Address: {}", account_id);
         }
         Commands::Faucet { address } => {
@@ -141,7 +149,7 @@ async fn main() -> Result<(), Error> {
 struct App {
     peaq_client: peaq_client::SignerClient,
     faucet: Faucet,
-    did: config::DID,
+    device: config::Device,
 }
 
 impl App {
@@ -151,7 +159,7 @@ impl App {
         Ok(Self {
             peaq_client,
             faucet: cfg.faucet,
-            did: cfg.did,
+            device: cfg.device,
         })
     }
 
@@ -160,32 +168,32 @@ impl App {
     }
 
     async fn sync(&self) -> Result<(), Error> {
-        if !self.did.sync {
+        if !self.device.sync {
             return Ok(());
         }
         let last_block = self.peaq_client.get_last_block().await?;
         info!(
-            "starting to get on-chain did information starting from {} block",
+            "starting to get on-chain device information starting from {} block",
             last_block.block.header.number()
         );
         let read_result: Option<ReadResult> = self
             .peaq_client
-            .read_attribute::<ReadResult, _>(DID_ATTRIBUTE_NAME, Some(filter))
+            .read_attribute::<ReadResult, _>(DEVICE_ATTRIBUTE_NAME, Some(filter))
             .await?;
-        let sync_state = get_sync_state(read_result, &self.did);
+        let sync_state = get_sync_state(read_result, &self.device);
         match sync_state {
-            SyncState::Ok => info!("on-chain did is up to date"),
+            SyncState::Ok => info!("on-chain device is up to date"),
             SyncState::Outdated => {
-                info!("on-chain did is outdated; starting to sync it");
-                let value = self.prepare_did()?;
-                self.peaq_client.update_attribute(DID_ATTRIBUTE_NAME, value).await?;
-                info!("successfully updated on-chain did");
+                info!("on-chain device is outdated; starting to sync it");
+                let value = self.prepare_device()?;
+                self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                info!("successfully updated on-chain device");
             }
             SyncState::NotCreated => {
-                info!("on-chain did is not created");
-                let value = self.prepare_did()?;
-                self.peaq_client.add_attribute(DID_ATTRIBUTE_NAME, value).await?;
-                info!("successfully created on-chain did");
+                info!("on-chain device is not created");
+                let value = self.prepare_device()?;
+                self.peaq_client.add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                info!("successfully created on-chain device");
             }
         }
         Ok(())
@@ -210,24 +218,32 @@ impl App {
 
     async fn self_remove(&self) -> Result<(), Error> {
         info!("starting to do self-remove");
-        self.peaq_client.remove_attribute(DID_ATTRIBUTE_NAME).await
+        self.peaq_client.remove_attribute(DEVICE_ATTRIBUTE_NAME).await
     }
 
-    fn prepare_did(&self) -> Result<Vec<u8>, Error> {
-        let did = DID::V1 {
-            data_type: self.did.attributes.data_type.clone(),
-            location: self.did.attributes.location.clone(),
-            pin_access: self.did.attributes.pin_access.clone(),
-            price_access: self.did.attributes.price_access.clone(),
-        };
-        let value = serde_json::to_vec(&did)?;
+    fn prepare_device(&self) -> Result<Vec<u8>, Error> {
+        let device = Device::V1(DeviceV1 {
+            data_type: self.device.attributes.data_type.clone(),
+            location: self.device.attributes.location.clone(),
+            pin_access: self.device.attributes.pin_access.clone(),
+            price_access: self.device.attributes.price_access.clone(),
+        });
+        let value = serde_json::to_vec(&device)?;
         Ok(value)
     }
 }
 
+pub(crate) fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
+    let phrase = bip39::Mnemonic::generate(12)?;
+    let keypair = Keypair::from_phrase(&phrase, None)?;
+    let account_id: AccountId32 =
+        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+    Ok((phrase, keypair, account_id))
+}
+
 fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
     match cfg.typ {
-        config::SignerType::Seed => {
+        config::SignerType::Phrase => {
             Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
         }
         config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
@@ -238,7 +254,7 @@ fn filter(event: EventDetails<PolkadotConfig>) -> Option<ReadResult> {
     if event.variant_name() == AttributeRead::EVENT {
         if let Ok(Some(evt)) = event.as_event::<AttributeRead>() {
             match serde_json::from_slice(&evt.0.value) {
-                Ok(did) => return Some(ReadResult::Ok(did)),
+                Ok(device) => return Some(ReadResult::Ok(device)),
                 Err(e) => {
                     // Looks like we have outdated format.
                     warn!("failed to decode on-chain attribute: {}", e);
@@ -250,24 +266,19 @@ fn filter(event: EventDetails<PolkadotConfig>) -> Option<ReadResult> {
     None
 }
 
-fn get_sync_state(read_result: Option<ReadResult>, expected: &config::DID) -> SyncState {
+fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) -> SyncState {
     if read_result.is_none() {
         return SyncState::NotCreated;
     }
     let read_result = read_result.unwrap();
     match read_result {
         ReadResult::DecodeError => SyncState::Outdated,
-        ReadResult::Ok(did) => match did {
-            DID::V1 {
-                data_type,
-                location,
-                price_access,
-                pin_access,
-            } => {
-                if data_type != expected.attributes.data_type
-                    || location != expected.attributes.location
-                    || price_access != expected.attributes.price_access
-                    || pin_access != expected.attributes.pin_access
+        ReadResult::Ok(device) => match device {
+            Device::V1(device) => {
+                if device.data_type != expected.attributes.data_type
+                    || device.location != expected.attributes.location
+                    || device.price_access != expected.attributes.price_access
+                    || device.pin_access != expected.attributes.pin_access
                 {
                     SyncState::Outdated
                 } else {
