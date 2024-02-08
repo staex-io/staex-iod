@@ -11,7 +11,7 @@ use axum::{
     routing::get,
     Extension, Json, Router,
 };
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
 use serde::{Deserialize, Serialize};
@@ -24,7 +24,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     config::{self, Config},
-    Device, Error, DEVICE_ATTRIBUTE_NAME,
+    Device, Error, DEVICE_ATTRIBUTE_NAME, V1,
 };
 
 pub(crate) async fn run(cfg: Config) -> Result<(), Error> {
@@ -63,7 +63,7 @@ impl Indexer {
     async fn run(&mut self, from_block: u64) -> Result<(), Error> {
         let mut current_block_index: u64 = from_block;
         loop {
-            debug!("get events in {} block", current_block_index);
+            trace!("get events in {} block", current_block_index);
             let events = self.peaq_client.get_events_in_block(current_block_index).await?;
             let events = match events {
                 Some(events) => events,
@@ -98,7 +98,9 @@ impl Indexer {
         &mut self,
         event: EventDetails<PolkadotConfig>,
     ) -> Result<(), Error> {
-        let event = event.as_event::<AttributeAdded>()?.ok_or_else::<Error, _>(|| "".into())?;
+        let event = event
+            .as_event::<AttributeAdded>()?
+            .ok_or_else::<Error, _>(|| "event is not AttributeAdded".into())?;
         if event.2.ne(DEVICE_ATTRIBUTE_NAME.as_bytes()) {
             return Ok(());
         }
@@ -141,6 +143,7 @@ impl Indexer {
 #[derive(sqlx::FromRow)]
 struct DatabaseDevice {
     address: String,
+    version: String,
     data: Vec<u8>,
     updated_at: i64,
 }
@@ -175,14 +178,19 @@ impl Database {
     }
 
     async fn save(&mut self, address: &str, data: Vec<u8>) -> Result<(), Error> {
+        let device: Device = serde_json::from_slice(&data)?;
+        let data: Vec<u8> = match &device {
+            Device::V1(device) => serde_json::to_vec(&device)?,
+        };
         let mut conn = self.conn.lock().await;
         sqlx::query(
             r#"
-                insert into devices (address, data, updated_at) values (?1, ?2, ?3) 
-                on conflict(address) do update set data = ?2, updated_at = ?3
+                insert into devices (address, version, data, updated_at) values (?1, ?2, ?3, ?4) 
+                on conflict(address) do update set data = ?3, updated_at = ?4
             "#,
         )
         .bind(address)
+        .bind(device.version())
         .bind(data)
         .bind(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
         .execute(&mut *conn)
@@ -216,17 +224,8 @@ struct ErrorResponse {
     message: String,
 }
 
-impl From<Error> for ErrorResponse {
-    fn from(value: Error) -> Self {
-        Self {
-            status_code: StatusCode::INTERNAL_SERVER_ERROR,
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<serde_json::Error> for ErrorResponse {
-    fn from(value: serde_json::Error) -> Self {
+impl<T: ToString> From<T> for ErrorResponse {
+    fn from(value: T) -> Self {
         Self {
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
             message: value.to_string(),
@@ -259,7 +258,8 @@ async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error>
 #[derive(Serialize, Deserialize)]
 struct DeviceResponse {
     address: String,
-    device: Device,
+    version: String,
+    device: serde_json::Value,
     updated_at: u64,
 }
 
@@ -269,10 +269,25 @@ async fn get_devices(
     let internal_devices = database.query().await?;
     let mut external_devices: Vec<DeviceResponse> = Vec::with_capacity(internal_devices.len());
     for internal_device in &internal_devices {
-        let device_data: Device = serde_json::from_slice(&internal_device.data)?;
+        let device: serde_json::Value = {
+            match internal_device.version.as_str() {
+                V1 => {
+                    let device: serde_json::Value = serde_json::from_slice(&internal_device.data)?;
+                    device
+                }
+                _ => {
+                    return Err(format!(
+                        "unknown version to convert internal device to external :{}",
+                        internal_device.version
+                    )
+                    .into())
+                }
+            }
+        };
         external_devices.push(DeviceResponse {
             address: internal_device.address.clone(),
-            device: device_data,
+            version: internal_device.version.clone(),
+            device,
             updated_at: internal_device.updated_at as u64,
         })
     }

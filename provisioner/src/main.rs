@@ -29,15 +29,28 @@ enum SyncState {
     NotCreated,
 }
 
+pub(crate) const V1: &str = "v1";
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Device {
-    V1 {
-        data_type: String,
-        location: String,
-        price_access: String,
-        pin_access: String,
-    },
+    V1(DeviceV1),
+}
+
+impl Device {
+    pub(crate) fn version(&self) -> &str {
+        match self {
+            Device::V1(_) => V1,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct DeviceV1 {
+    data_type: String,
+    location: String,
+    price_access: String,
+    pin_access: String,
 }
 
 enum ReadResult {
@@ -208,12 +221,12 @@ impl App {
     }
 
     fn prepare_device(&self) -> Result<Vec<u8>, Error> {
-        let device = Device::V1 {
+        let device = Device::V1(DeviceV1 {
             data_type: self.device.attributes.data_type.clone(),
             location: self.device.attributes.location.clone(),
             pin_access: self.device.attributes.pin_access.clone(),
             price_access: self.device.attributes.price_access.clone(),
-        };
+        });
         let value = serde_json::to_vec(&device)?;
         Ok(value)
     }
@@ -252,16 +265,11 @@ fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) ->
     match read_result {
         ReadResult::DecodeError => SyncState::Outdated,
         ReadResult::Ok(device) => match device {
-            Device::V1 {
-                data_type,
-                location,
-                price_access,
-                pin_access,
-            } => {
-                if data_type != expected.attributes.data_type
-                    || location != expected.attributes.location
-                    || price_access != expected.attributes.price_access
-                    || pin_access != expected.attributes.pin_access
+            Device::V1(device) => {
+                if device.data_type != expected.attributes.data_type
+                    || device.location != expected.attributes.location
+                    || device.price_access != expected.attributes.price_access
+                    || device.pin_access != expected.attributes.pin_access
                 {
                     SyncState::Outdated
                 } else {
