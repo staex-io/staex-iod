@@ -1,14 +1,17 @@
 install:
 	./run.sh bun install
 
-new-dep:
+new_dep:
 	./run.sh bun install $(name)
 
-fmt:
+format:
 	./run.sh bun format
 
-lint: fmt
+lint: format
 	./run.sh bun lint
 
 run:
 	./run.sh bun dev --host 0.0.0.0
+
+run_docker:
+	./run.sh bun dev-docker --host 0.0.0.0

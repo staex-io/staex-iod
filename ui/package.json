@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev-docker": "env VITE_INDEXER_ENDPOINT=http://host.docker.internal:4698 vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/ --write vite.config.js"
   },
   "dependencies": {
     "vue": "^3.4.17",

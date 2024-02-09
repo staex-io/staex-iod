@@ -16,7 +16,7 @@ use log::{debug, error, info, trace};
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
 use serde::{Deserialize, Serialize};
-use sqlx::{Connection, QueryBuilder, Sqlite, SqliteConnection};
+use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{
     events::{EventDetails, StaticEvent},
     PolkadotConfig,
@@ -200,31 +200,49 @@ impl Database {
     }
 
     async fn query(&self, params: GetDevicesParams) -> Result<Vec<DatabaseDevice>, Error> {
-        let mut query: QueryBuilder<sqlx::Sqlite> = {
-            let mut query: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new("select * from devices");
-            let filters_len = params.filters.len();
-            if filters_len != 0 {
-                query.push(" where ");
-                for (i, filter) in params.filters.iter().enumerate() {
-                    Self::is_filter_allowed(filter)?;
-                    if i != 0 {
-                        query.push(" AND ");
-                    }
-                    query.push(format!(
-                        "json_extract(data, '$.{}') {} ",
-                        filter.field, filter.condition
-                    ));
-                    push_bind(&mut query, &filter.value);
-                }
-            }
-            query.push(" order by updated_at desc");
-            query.push(" limit ").push_bind(params.limit).push(" offset ").push_bind(params.offset);
-            query
-        };
+        let mut query: QueryBuilder<sqlx::Sqlite> = Self::prepare_query::<sqlx::Sqlite>(&params)?;
+        trace!("sql query: {}", query.sql());
         let query = query.build_query_as::<DatabaseDevice>();
         let mut conn = self.conn.lock().await;
         let devices = query.fetch_all(&mut *conn).await?;
         Ok(devices)
+    }
+
+    fn prepare_query<'a, DB: sqlx::Database>(
+        params: &'a GetDevicesParams,
+    ) -> Result<QueryBuilder<'a, DB>, Error>
+    where
+        std::string::String: sqlx::Encode<'a, DB>,
+        std::string::String: sqlx::Type<DB>,
+        u32: sqlx::Encode<'a, DB>,
+        u32: sqlx::Type<DB>,
+        f64: sqlx::Encode<'a, DB>,
+        f64: sqlx::Type<DB>,
+    {
+        let mut query: QueryBuilder<DB> = QueryBuilder::new("select * from devices");
+        if let Some(address) = &params.address {
+            query.push(" where address = ");
+            query.push_bind(address);
+            return Ok(query);
+        }
+        let filters_len = params.filters.len();
+        if filters_len != 0 {
+            query.push(" where ");
+            for (i, filter) in params.filters.iter().enumerate() {
+                Self::is_filter_allowed(filter)?;
+                if i != 0 {
+                    query.push(" AND ");
+                }
+                query.push(format!(
+                    "json_extract(data, '$.{}') {} ",
+                    filter.field, filter.condition
+                ));
+                push_bind(&mut query, &filter.value);
+            }
+        }
+        query.push(" order by updated_at desc");
+        query.push(" limit ").push_bind(params.limit).push(" offset ").push_bind(params.offset);
+        Ok(query)
     }
 
     async fn delete(&mut self, address: &str) -> Result<(), Error> {
@@ -260,7 +278,13 @@ impl Database {
     }
 }
 
-fn push_bind<'a>(query: &mut QueryBuilder<'a, Sqlite>, value: &'a Value) {
+fn push_bind<'a, DB: sqlx::Database>(query: &mut QueryBuilder<'a, DB>, value: &'a Value)
+where
+    std::string::String: sqlx::Encode<'a, DB>,
+    std::string::String: sqlx::Type<DB>,
+    f64: sqlx::Encode<'a, DB>,
+    f64: sqlx::Type<DB>,
+{
     match value {
         Value::String(string) => query.push_bind(string),
         Value::F64(f64) => query.push_bind(f64),
@@ -295,7 +319,10 @@ impl IntoResponse for ErrorResponse {
 }
 
 async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error> {
-    let app = Router::new().route("/devices", get(get_devices)).layer(Extension(database));
+    let app = Router::new()
+        .route("/devices", get(get_devices))
+        .layer(Extension(database))
+        .fallback(fallback);
     let addr = format!("{}:{}", cfg.host, cfg.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!("listen on {addr} for HTTP requests");
@@ -328,17 +355,22 @@ where
 
 #[derive(Deserialize)]
 struct GetDevicesParams {
-    limit: u32,
-    offset: u32,
+    address: Option<String>,
+    #[serde(default)]
     filters: Vec<Filter>,
+    #[serde(default)]
+    limit: u32,
+    #[serde(default)]
+    offset: u32,
 }
 
 impl Default for GetDevicesParams {
     fn default() -> Self {
         Self {
+            address: None,
+            filters: vec![],
             limit: 10,
             offset: 0,
-            filters: vec![],
         }
     }
 }
@@ -411,4 +443,8 @@ async fn get_devices(
         })
     }
     Ok((StatusCode::OK, Json(external_devices)))
+}
+
+async fn fallback() -> impl IntoResponse {
+    StatusCode::NOT_FOUND
 }
