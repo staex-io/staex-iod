@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::OpenOptions,
     io::ErrorKind,
     sync::Arc,
@@ -7,8 +6,8 @@ use std::{
 };
 
 use axum::{
-    extract::Query,
-    http::StatusCode,
+    extract::FromRequestParts,
+    http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
     Extension, Json, Router,
@@ -70,7 +69,7 @@ impl Indexer {
             let events = match events {
                 Some(events) => events,
                 None => {
-                    debug!("indexer synced all blocks; waiting for new");
+                    trace!("indexer synced all blocks; waiting for new");
                     tokio::time::sleep(Duration::from_secs(3)).await;
                     continue;
                 }
@@ -200,34 +199,50 @@ impl Database {
         Ok(())
     }
 
-    async fn query(
-        &self,
-        filters: HashMap<String, String>,
-        limit: u32,
-        offset: u32,
-    ) -> Result<Vec<DatabaseDevice>, Error> {
-        let mut query: QueryBuilder<sqlx::Sqlite> = {
-            let mut query: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new("select * from devices");
-            let filters_len = filters.len();
-            if filters_len != 0 {
-                query.push(" where ");
-                for (i, (field, value)) in filters.iter().enumerate() {
-                    Self::is_field_allowed(field)?;
-                    if i != 0 {
-                        query.push(" AND ");
-                    }
-                    query.push(format!("json_extract(data, '$.{}') = ", field));
-                    query.push_bind(value);
-                }
-            }
-            query.push(" order by updated_at desc");
-            query.push(" limit ").push_bind(limit).push(" offset ").push_bind(offset);
-            query
-        };
+    async fn query(&self, params: GetDevicesParams) -> Result<Vec<DatabaseDevice>, Error> {
+        let mut query: QueryBuilder<sqlx::Sqlite> = Self::prepare_query::<sqlx::Sqlite>(&params)?;
+        trace!("sql query: {}", query.sql());
         let query = query.build_query_as::<DatabaseDevice>();
         let mut conn = self.conn.lock().await;
         let devices = query.fetch_all(&mut *conn).await?;
         Ok(devices)
+    }
+
+    fn prepare_query<'a, DB: sqlx::Database>(
+        params: &'a GetDevicesParams,
+    ) -> Result<QueryBuilder<'a, DB>, Error>
+    where
+        std::string::String: sqlx::Encode<'a, DB>,
+        std::string::String: sqlx::Type<DB>,
+        u32: sqlx::Encode<'a, DB>,
+        u32: sqlx::Type<DB>,
+        f64: sqlx::Encode<'a, DB>,
+        f64: sqlx::Type<DB>,
+    {
+        let mut query: QueryBuilder<DB> = QueryBuilder::new("select * from devices");
+        if let Some(address) = &params.address {
+            query.push(" where address = ");
+            query.push_bind(address);
+            return Ok(query);
+        }
+        let filters_len = params.filters.len();
+        if filters_len != 0 {
+            query.push(" where ");
+            for (i, filter) in params.filters.iter().enumerate() {
+                Self::is_filter_allowed(filter)?;
+                if i != 0 {
+                    query.push(" AND ");
+                }
+                query.push(format!(
+                    "json_extract(data, '$.{}') {} ",
+                    filter.field, filter.condition
+                ));
+                push_bind(&mut query, &filter.value);
+            }
+        }
+        query.push(" order by updated_at desc");
+        query.push(" limit ").push_bind(params.limit).push(" offset ").push_bind(params.offset);
+        Ok(query)
     }
 
     async fn delete(&mut self, address: &str) -> Result<(), Error> {
@@ -239,14 +254,41 @@ impl Database {
         Ok(())
     }
 
-    // I didn't find a way to properly bind JSON field name to sql query,
-    // so it is required to manually check for allowed fields.
+    // I didn't find a way to properly bind JSON field name and condition to sql query,
+    // so it is required to manually check for allowed fields and conditions.
+    // For value we don't need this check as we can bind it.
+    fn is_filter_allowed(filter: &Filter) -> Result<(), Error> {
+        Self::is_field_allowed(&filter.field)?;
+        Self::is_condition_allowed(&filter.condition)?;
+        Ok(())
+    }
+
     fn is_field_allowed(field: &str) -> Result<(), Error> {
         if matches!(field, "data_type" | "location" | "price_access" | "price_pin") {
             return Ok(());
         }
         Err("received untrusted filter".into())
     }
+
+    fn is_condition_allowed(field: &str) -> Result<(), Error> {
+        if matches!(field, "=" | "<" | ">") {
+            return Ok(());
+        }
+        Err("received untrusted condition".into())
+    }
+}
+
+fn push_bind<'a, DB: sqlx::Database>(query: &mut QueryBuilder<'a, DB>, value: &'a Value)
+where
+    std::string::String: sqlx::Encode<'a, DB>,
+    std::string::String: sqlx::Type<DB>,
+    f64: sqlx::Encode<'a, DB>,
+    f64: sqlx::Type<DB>,
+{
+    match value {
+        Value::String(string) => query.push_bind(string),
+        Value::F64(f64) => query.push_bind(f64),
+    };
 }
 
 struct ErrorResponse {
@@ -277,7 +319,10 @@ impl IntoResponse for ErrorResponse {
 }
 
 async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error> {
-    let app = Router::new().route("/devices", get(get_devices)).layer(Extension(database));
+    let app = Router::new()
+        .route("/devices", get(get_devices))
+        .layer(Extension(database))
+        .fallback(fallback);
     let addr = format!("{}:{}", cfg.host, cfg.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!("listen on {addr} for HTTP requests");
@@ -285,12 +330,74 @@ async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error>
     Ok(())
 }
 
+struct QueryArray<T>(pub T);
+
+#[axum::async_trait]
+impl<S, T> FromRequestParts<S> for QueryArray<T>
+where
+    S: Send + Sync,
+    T: serde::de::DeserializeOwned + Default,
+{
+    type Rejection = ErrorResponse;
+
+    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+        let query = match parts.uri.query() {
+            Some(query) => query,
+            None => return Ok(Self(T::default())),
+        };
+        let data = match serde_qs::from_str::<T>(query) {
+            Ok(data) => data,
+            Err(e) => return Err(format!("failed to decode query params: {e}").into()),
+        };
+        Ok(Self(data))
+    }
+}
+
 #[derive(Deserialize)]
 struct GetDevicesParams {
-    #[serde(flatten)]
-    filters: HashMap<String, String>,
+    address: Option<String>,
+    #[serde(default)]
+    filters: Vec<Filter>,
+    #[serde(default)]
     limit: u32,
+    #[serde(default)]
     offset: u32,
+}
+
+impl Default for GetDevicesParams {
+    fn default() -> Self {
+        Self {
+            address: None,
+            filters: vec![],
+            limit: 10,
+            offset: 0,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct Filter {
+    field: String,
+    condition: String, // "=", "<", ">"
+    value: Value,
+}
+
+enum Value {
+    String(String),
+    F64(f64),
+}
+
+impl<'de> Deserialize<'de> for Value {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        match value.parse::<f64>() {
+            Ok(v) => Ok(Value::F64(v)),
+            _ => Ok(Value::String(value)),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -302,15 +409,15 @@ struct DeviceResponse {
 }
 
 async fn get_devices(
-    Query(params): Query<GetDevicesParams>,
+    QueryArray(params): QueryArray<GetDevicesParams>,
     Extension(database): Extension<Database>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
-    for field in params.filters.keys() {
-        if Database::is_field_allowed(field).is_err() {
-            return Err(format!("{} field is not supporting for filtering", field).into());
+    for filter in &params.filters {
+        if Database::is_filter_allowed(filter).is_err() {
+            return Err(format!("{} field is not supporting for filtering", filter.field).into());
         }
     }
-    let internal_devices = database.query(params.filters, params.limit, params.offset).await?;
+    let internal_devices = database.query(params).await?;
     let mut external_devices: Vec<DeviceResponse> = Vec::with_capacity(internal_devices.len());
     for internal_device in &internal_devices {
         let device: serde_json::Value = {
@@ -336,4 +443,8 @@ async fn get_devices(
         })
     }
     Ok((StatusCode::OK, Json(external_devices)))
+}
+
+async fn fallback() -> impl IntoResponse {
+    StatusCode::NOT_FOUND
 }

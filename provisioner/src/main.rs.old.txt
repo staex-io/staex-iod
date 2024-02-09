@@ -624,7 +624,7 @@ mod config {
         pub(crate) data_type: String,
         pub(crate) location: String,
         pub(crate) price_access: String,
-        pub(crate) pin_access: String,
+        pub(crate) price_pin: String,
         pub(crate) additional: Option<HashMap<String, toml::Value>>,
     }
 
