@@ -52,6 +52,14 @@ export default {
           </a>
         </span>
       </div>
+      <div class="card-field">
+        <span class="card-field-label">Price to access data</span>
+        <span class="card-field-value">{{ device.device.price_access }}</span>
+      </div>
+      <div class="card-field">
+        <span class="card-field-label">Price to pin data</span>
+        <span class="card-field-value">{{ device.device.price_pin }}</span>
+      </div>
       <hr />
       <div class="card-field">
         <span class="card-field-label">Additional</span>
