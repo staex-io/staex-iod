@@ -17,7 +17,7 @@ export default {
         let url = `/indexer/devices?limit=${this.limit}&offset=${this.offset}`
         if (filter !== undefined) {
           if (filter.field === 'address') {
-            url = `${url}&address=${filter.field}`
+            url = `${url}&address=${filter.value}`
           } else {
             url = `${url}&filters[0][field]=${filter.field}&filters[0][condition]=${filter.condition}&filters[0][value]=${filter.value}`
           }
@@ -127,7 +127,7 @@ export default {
           :key="address"
         >
           <td class="mouse-pointer" @click="() => goToDevicePage(address)">
-            {{ address.slice(0, 4) + '..' + address.slice(28, 32) }}
+            {{ address.slice(0, 4) + '..' + address.slice(44, 48) }}
           </td>
           <td>{{ data_type }}</td>
           <td>
