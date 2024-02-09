@@ -11,7 +11,10 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "vue": "^3.4.15"
+    "vue": "^3.4.17",
+    "@fontsource/roboto": "^5.0.8",
+    "normalize.css": "^8.0.1",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.7.2",
