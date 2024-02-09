@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use clap::{Parser, Subcommand};
 use config::Faucet;
@@ -55,6 +55,8 @@ pub(crate) struct DeviceV1 {
     location: String,
     price_access: f64,
     pin_access: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    additional: Option<HashMap<String, toml::Value>>,
 }
 
 enum ReadResult {
@@ -182,7 +184,15 @@ impl App {
             .await?;
         let sync_state = get_sync_state(read_result, &self.device);
         match sync_state {
-            SyncState::Ok => info!("on-chain device is up to date"),
+            SyncState::Ok => {
+                info!("on-chain device is up to date");
+                if self.device.force {
+                    warn!("force sync is enabled; starting to sync it");
+                    let value = self.prepare_device()?;
+                    self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                    info!("successfully updated on-chain device");
+                }
+            }
             SyncState::Outdated => {
                 info!("on-chain device is outdated; starting to sync it");
                 let value = self.prepare_device()?;
@@ -227,6 +237,7 @@ impl App {
             location: self.device.attributes.location.clone(),
             pin_access: self.device.attributes.pin_access,
             price_access: self.device.attributes.price_access,
+            additional: self.device.attributes.additional.clone(),
         });
         let value = serde_json::to_vec(&device)?;
         Ok(value)

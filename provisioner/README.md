@@ -31,6 +31,7 @@ val = "//Alice"
 
 [device]
 sync = true
+force = false
 
 [device.attributes]
 data_type = "cctv-camera"
@@ -38,18 +39,22 @@ location = "40.1949288120072,44.55177253802097"
 price_access = 42.03995
 pin_access = 445.12222
 
+[device.attributes.additional]
+microcontroller = "stm32"
+device_age_in_years = 2
+
 [indexer]
-from_block = 1717920
+from_block = 1728205
 dsn = "sqlite:staex-iod.sqlite"
 host = "127.0.0.1"
 port = 4698
 ```
 
-### ink! smart contracts research
+## ink! smart contracts research
 
 In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink! smart contracts located.
 
-### Get devices by HTTP API
+## Get devices by HTTP API
 
 ```shell
 curl -s -X GET -G 'http://127.0.0.1:4698/devices?limit=10&offset=0' --data-urlencode 'filters[0][field]=data_type' --data-urlencode 'filters[0][condition]==' --data-urlencode 'filters[0][value]=cctv-camera' | jq
@@ -70,3 +75,7 @@ curl -s -X GET -G 'http://127.0.0.1:4698/devices?limit=10&offset=0' --data-urlen
   }
 ]
 ```
+
+## Force device on-chain update
+
+Currently provisioner doesn't compare additional fields from config device with on-chain device additional fields while sync. So to update additional fields you need to enable force sync.

@@ -16,7 +16,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             log_level: Level::Debug.to_string(),
-            rpc_url: "ws://127.0.0.1:9944".to_string(),
+            rpc_url: "wss://rpcpc1-qa.agung.peaq.network".to_string(),
             signer: Default::default(),
             faucet: Default::default(),
             device: Default::default(),
@@ -49,6 +49,7 @@ impl Default for Signer {
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct Device {
     pub(crate) sync: bool,
+    pub(crate) force: bool,
     pub(crate) attributes: Attributes,
 }
 
@@ -56,6 +57,7 @@ impl Default for Device {
     fn default() -> Self {
         Self {
             sync: true,
+            force: false,
             attributes: Attributes::default(),
         }
     }
@@ -79,7 +81,10 @@ impl Default for Attributes {
             location: "40.1949288120072,44.55177253802097".to_string(),
             price_access: 42.03995,
             pin_access: 445.12222,
-            additional: None,
+            additional: Some(HashMap::from([
+                ("microcontroller".to_string(), "stm32".into()),
+                ("device_age_in_years".to_string(), 2.into()),
+            ])),
         }
     }
 }
@@ -114,7 +119,7 @@ pub(crate) struct Indexer {
 impl Default for Indexer {
     fn default() -> Self {
         Self {
-            from_block: 1717920,
+            from_block: 1728205,
             dsn: "sqlite:staex-iod.sqlite".to_string(),
             host: "127.0.0.1".to_string(),
             port: 4698,

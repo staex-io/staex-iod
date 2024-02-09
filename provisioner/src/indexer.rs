@@ -69,7 +69,7 @@ impl Indexer {
             let events = match events {
                 Some(events) => events,
                 None => {
-                    debug!("indexer synced all blocks; waiting for new");
+                    trace!("indexer synced all blocks; waiting for new");
                     tokio::time::sleep(Duration::from_secs(3)).await;
                     continue;
                 }
