@@ -16,7 +16,7 @@ use log::{debug, error, info, trace};
 use peaq_client::Client;
 use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
 use serde::{Deserialize, Serialize};
-use sqlx::{Connection, QueryBuilder, SqliteConnection};
+use sqlx::{Connection, QueryBuilder, Sqlite, SqliteConnection};
 use subxt::{
     events::{EventDetails, StaticEvent},
     PolkadotConfig,
@@ -214,7 +214,7 @@ impl Database {
                         "json_extract(data, '$.{}') {} ",
                         filter.field, filter.condition
                     ));
-                    query.push_bind(&filter.value);
+                    push_bind(&mut query, &filter.value);
                 }
             }
             query.push(" order by updated_at desc");
@@ -258,6 +258,13 @@ impl Database {
         }
         Err("received untrusted condition".into())
     }
+}
+
+fn push_bind<'a>(query: &mut QueryBuilder<'a, Sqlite>, value: &'a Value) {
+    match value {
+        Value::String(string) => query.push_bind(string),
+        Value::F64(f64) => query.push_bind(f64),
+    };
 }
 
 struct ErrorResponse {
@@ -340,7 +347,25 @@ impl Default for GetDevicesParams {
 struct Filter {
     field: String,
     condition: String, // "=", "<", ">"
-    value: String,
+    value: Value,
+}
+
+enum Value {
+    String(String),
+    F64(f64),
+}
+
+impl<'de> Deserialize<'de> for Value {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        match value.parse::<f64>() {
+            Ok(v) => Ok(Value::F64(v)),
+            _ => Ok(Value::String(value)),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]

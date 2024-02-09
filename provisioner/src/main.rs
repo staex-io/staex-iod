@@ -53,8 +53,8 @@ impl Device {
 pub(crate) struct DeviceV1 {
     data_type: String,
     location: String,
-    price_access: String,
-    pin_access: String,
+    price_access: f64,
+    pin_access: f64,
 }
 
 enum ReadResult {
@@ -225,8 +225,8 @@ impl App {
         let device = Device::V1(DeviceV1 {
             data_type: self.device.attributes.data_type.clone(),
             location: self.device.attributes.location.clone(),
-            pin_access: self.device.attributes.pin_access.clone(),
-            price_access: self.device.attributes.price_access.clone(),
+            pin_access: self.device.attributes.pin_access,
+            price_access: self.device.attributes.price_access,
         });
         let value = serde_json::to_vec(&device)?;
         Ok(value)

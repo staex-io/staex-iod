@@ -16,7 +16,7 @@ cargo run -- config
 
 ```toml
 log_level = "DEBUG"
-rpc_url = "ws://127.0.0.1:9944"
+rpc_url = "wss://rpcpc1-qa.agung.peaq.network"
 
 [signer]
 typ = "SecretUri"
@@ -35,11 +35,11 @@ sync = true
 [device.attributes]
 data_type = "cctv-camera"
 location = "40.1949288120072,44.55177253802097"
-price_access = "42.03995"
-pin_access = "445.12222"
+price_access = 42.03995
+pin_access = 445.12222
 
 [indexer]
-from_block = 1717233
+from_block = 1717920
 dsn = "sqlite:staex-iod.sqlite"
 host = "127.0.0.1"
 port = 4698

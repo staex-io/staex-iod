@@ -67,8 +67,8 @@ impl Default for Device {
 pub(crate) struct Attributes {
     pub(crate) data_type: String,
     pub(crate) location: String,
-    pub(crate) price_access: String,
-    pub(crate) pin_access: String,
+    pub(crate) price_access: f64,
+    pub(crate) pin_access: f64,
     pub(crate) additional: Option<HashMap<String, toml::Value>>,
 }
 
@@ -77,8 +77,8 @@ impl Default for Attributes {
         Self {
             data_type: "cctv-camera".to_string(),
             location: "40.1949288120072,44.55177253802097".to_string(),
-            price_access: "42.03995".to_string(),
-            pin_access: "445.12222".to_string(),
+            price_access: 42.03995,
+            pin_access: 445.12222,
             additional: None,
         }
     }
