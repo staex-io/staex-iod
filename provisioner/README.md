@@ -52,7 +52,7 @@ In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink!
 ### Get devices by HTTP API
 
 ```shell
-curl -s X GET 'http://127.0.0.1:4698/devices?limit=10&offset=1&data_type=cctv-camera&price_access=42.03995' | jq
+curl -s -X GET -G 'http://127.0.0.1:4698/devices?limit=10&offset=0' --data-urlencode 'filters[0][field]=data_type' --data-urlencode 'filters[0][condition]==' --data-urlencode 'filters[0][value]=cctv-camera' | jq
 ```
 
 ```json
