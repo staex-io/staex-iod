@@ -54,7 +54,7 @@ pub(crate) struct DeviceV1 {
     data_type: String,
     location: String,
     price_access: f64,
-    pin_access: f64,
+    price_pin: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     additional: Option<HashMap<String, toml::Value>>,
 }
@@ -235,7 +235,7 @@ impl App {
         let device = Device::V1(DeviceV1 {
             data_type: self.device.attributes.data_type.clone(),
             location: self.device.attributes.location.clone(),
-            pin_access: self.device.attributes.pin_access,
+            price_pin: self.device.attributes.price_pin,
             price_access: self.device.attributes.price_access,
             additional: self.device.attributes.additional.clone(),
         });
@@ -289,7 +289,7 @@ fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) ->
                 if device.data_type != expected.attributes.data_type
                     || device.location != expected.attributes.location
                     || device.price_access != expected.attributes.price_access
-                    || device.pin_access != expected.attributes.pin_access
+                    || device.price_pin != expected.attributes.price_pin
                 {
                     SyncState::Outdated
                 } else {

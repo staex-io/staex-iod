@@ -37,14 +37,14 @@ force = false
 data_type = "cctv-camera"
 location = "40.1949288120072,44.55177253802097"
 price_access = 42.03995
-pin_access = 445.12222
+price_pin = 445.12222
 
 [device.attributes.additional]
 microcontroller = "stm32"
 device_age_in_years = 2
 
 [indexer]
-from_block = 1728205
+from_block = 1731233
 dsn = "sqlite:staex-iod.sqlite"
 host = "127.0.0.1"
 port = 4698
@@ -68,7 +68,7 @@ curl -s -X GET -G 'http://127.0.0.1:4698/devices?limit=10&offset=0' --data-urlen
     "device": {
       "data_type": "cctv-camera",
       "location": "40.1949288120072,44.55177253802097",
-      "pin_access": "445.12222",
+      "price_pin": "445.12222",
       "price_access": "42.03995"
     },
     "updated_at": 1707386161

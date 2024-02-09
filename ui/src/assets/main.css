@@ -231,3 +231,28 @@ select {
 .card-field-value {
   color: var(--staex-medium-pacific-blue);
 }
+
+.form-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-container select,
+.form-container input {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.form-container input {
+  flex: 2;
+}
+
+.form-container > *:first-child {
+  margin-left: 0;
+}
+
+.form-container > *:last-child {
+  margin-right: 0;
+}

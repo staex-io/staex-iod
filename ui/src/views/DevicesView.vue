@@ -6,12 +6,23 @@ export default {
       limit: 2,
       offset: 0,
       devices: [],
+      filterField: '',
+      filterCondition: '',
+      filterValue: '',
     }
   },
   methods: {
-    async getDevices() {
+    async getDevices(filter) {
       try {
-        let res = await fetch(`/indexer/devices?limit=${this.limit}&offset=${this.offset}`, {
+        let url = `/indexer/devices?limit=${this.limit}&offset=${this.offset}`
+        if (filter !== undefined) {
+          if (filter.field === 'address') {
+            url = `${url}&address=${filter.field}`
+          } else {
+            url = `${url}&filters[0][field]=${filter.field}&filters[0][condition]=${filter.condition}&filters[0][value]=${filter.value}`
+          }
+        }
+        let res = await fetch(url, {
           method: 'GET',
         })
         switch (res.status) {
@@ -51,6 +62,16 @@ export default {
       this.offset = this.offset + this.limit
       this.getDevices()
     },
+    handleFilter() {
+      if (this.filterField === '' || this.filterCondition === '' || this.filterValue === '') {
+        return
+      }
+      this.getDevices({
+        field: this.filterField,
+        condition: this.filterCondition,
+        value: this.filterValue,
+      })
+    },
   },
   mounted() {
     this.getDevices()
@@ -59,6 +80,35 @@ export default {
 </script>
 
 <template>
+  <div class="container filter">
+    <div class="item">
+      <form class="form-container" @submit.prevent="handleFilter">
+        <select id="filterField" v-model="filterField" style="margin-right: 5px">
+          <option disabled value="" selected>Select field</option>
+          <option
+            v-for="key in ['address', 'data_type', 'price_access', 'price_pin']"
+            :key="key"
+            :value="key"
+          >
+            {{ key }}
+          </option>
+        </select>
+        <select id="filterCondition" v-model="filterCondition" style="margin-right: 5px">
+          <option disabled value="" selected>Select condition</option>
+          <option v-for="key in ['=', '<', '>']" :key="key" :value="key">
+            {{ key }}
+          </option>
+        </select>
+        <input
+          type="text"
+          name="filterValue"
+          id="filterValue"
+          placeholder="Field value"
+          v-model="filterValue"
+        />
+      </form>
+    </div>
+  </div>
   <h1>Devices</h1>
   <div>
     <table v-if="devices.length">
@@ -67,22 +117,26 @@ export default {
           <th>Address</th>
           <th>Data Type</th>
           <th>Location</th>
+          <th>Price access</th>
+          <th>Price pin</th>
         </tr>
       </thead>
       <tbody>
         <tr
-          class="mouse-pointer"
-          @click="() => goToDevicePage(address)"
-          v-for="{ address, device: { data_type, location } } in devices"
+          v-for="{ address, device: { data_type, location, price_access, price_pin } } in devices"
           :key="address"
         >
-          <td>{{ address }}</td>
+          <td class="mouse-pointer" @click="() => goToDevicePage(address)">
+            {{ address.slice(0, 4) + '..' + address.slice(28, 32) }}
+          </td>
           <td>{{ data_type }}</td>
           <td>
             <a :href="`https://www.google.com/maps/place/${location}`" target="_blank">{{
               location
             }}</a>
           </td>
+          <td>{{ price_access }}</td>
+          <td>{{ price_pin }}</td>
         </tr>
       </tbody>
     </table>
@@ -107,7 +161,11 @@ export default {
 }
 
 .pagination > button {
-  padding: 0px 25px 5px 25px;
+  padding: 5px 25px 5px 25px;
   width: 100%;
+}
+
+.filter {
+  margin: 25px 0 25px 0;
 }
 </style>
