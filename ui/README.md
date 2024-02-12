@@ -1,5 +1,17 @@
 # UI
 
+## Build
+
+To build Staex IoD user interface user following commands:
+
+```shell
+make build
+# or
+./run.sh bun run build
+# or
+bun run build
+```
+
 ## Usage
 
 ```shell
