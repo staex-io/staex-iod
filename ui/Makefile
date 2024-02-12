@@ -15,3 +15,6 @@ run:
 
 run_docker:
 	./run.sh bun dev-docker --host 0.0.0.0
+
+build:
+	./run.sh bun run build
