@@ -34,6 +34,7 @@ export default {
             return
         }
         let data = await res.json()
+        if (this.offset !== 0 && data.length === 0) return
         this.devices = data
       } catch (e) {
         console.error(e)
@@ -71,6 +72,7 @@ export default {
       this.getDevices()
     },
     handleFilter() {
+      this.offset = 0
       if (this.filterField === '' || this.filterCondition === '' || this.filterValue === '') {
         return
       }
@@ -115,6 +117,7 @@ export default {
           placeholder="Field value"
           v-model="filterValue"
         />
+        <button type="button" @click="handleFilter" style="margin-right: 5px">Apply</button>
         <button type="button" @click="clearFilter">Clear</button>
       </form>
     </div>
