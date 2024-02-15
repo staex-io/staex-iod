@@ -157,7 +157,12 @@ export default {
     </div>
   </div>
 </template>
+
 <style scoped>
+.item {
+  display: block;
+}
+
 .left-button {
   margin: 0 5px 0 0;
 }
