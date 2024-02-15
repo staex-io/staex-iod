@@ -9,17 +9,18 @@ export default {
       filterField: '',
       filterCondition: '',
       filterValue: '',
+      filter: null,
     }
   },
   methods: {
-    async getDevices(filter) {
+    async getDevices() {
       try {
         let url = `/indexer/devices?limit=${this.limit}&offset=${this.offset}`
-        if (filter !== undefined) {
-          if (filter.field === 'address') {
-            url = `${url}&address=${filter.value}`
+        if (this.filter !== null) {
+          if (this.filter.field === 'address') {
+            url = `${url}&address=${this.filter.value}`
           } else {
-            url = `${url}&filters[0][field]=${filter.field}&filters[0][condition]=${filter.condition}&filters[0][value]=${filter.value}`
+            url = `${url}&filters[0][field]=${this.filter.field}&filters[0][condition]=${this.filter.condition}&filters[0][value]=${this.filter.value}`
           }
         }
         let res = await fetch(url, {
@@ -62,15 +63,23 @@ export default {
       this.offset = this.offset + this.limit
       this.getDevices()
     },
+    clearFilter() {
+      this.filter = null
+      this.filterField = ''
+      this.filterCondition = ''
+      this.filterValue = ''
+      this.getDevices()
+    },
     handleFilter() {
       if (this.filterField === '' || this.filterCondition === '' || this.filterValue === '') {
         return
       }
-      this.getDevices({
+      this.filter = {
         field: this.filterField,
         condition: this.filterCondition,
         value: this.filterValue,
-      })
+      }
+      this.getDevices()
     },
   },
   mounted() {
@@ -106,6 +115,7 @@ export default {
           placeholder="Field value"
           v-model="filterValue"
         />
+        <button type="button" @click="clearFilter">Clear</button>
       </form>
     </div>
   </div>
