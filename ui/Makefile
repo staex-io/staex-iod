@@ -18,3 +18,7 @@ run_docker:
 
 build:
 	./run.sh bun run build
+
+.PHONY: rsync
+rsync:
+	rsync -a --delete dist/ he1:/srv/iod/
