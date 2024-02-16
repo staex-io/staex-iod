@@ -65,6 +65,7 @@ export default {
       this.getDevices()
     },
     clearFilter() {
+      this.offset = 0
       this.filter = null
       this.filterField = ''
       this.filterCondition = ''
