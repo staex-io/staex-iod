@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev-docker": "env VITE_INDEXER_ENDPOINT=http://host.docker.internal:4698 vite",
     "build": "vite build",
+    "build-prod": "env VITE_INDEXER_ENDPOINT=https://iod.staex.io vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
     "format": "prettier --write src/ --write vite.config.js"
