@@ -1,4 +1,4 @@
-FROM rust:1.75-alpine3.19 as builder
+FROM rust:1.76-alpine3.19 as builder
 RUN apk add --update alpine-sdk
 WORKDIR /build
 COPY ./contracts /build/contracts
