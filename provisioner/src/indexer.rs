@@ -13,8 +13,10 @@ use axum::{
     Extension, Json, Router,
 };
 use log::{debug, error, info, trace};
-use peaq_client::Client;
-use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
+use peaq_client::{
+    peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated},
+    Client,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{

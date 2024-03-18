@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr};
 use clap::{Parser, Subcommand};
 use config::Faucet;
 use log::{error, info, warn, Level, LevelFilter};
-use peaq_gen::api::peaq_did::events::AttributeRead;
+use peaq_client::peaq_gen::api::peaq_did::events::AttributeRead;
 use serde::{Deserialize, Serialize};
 use subxt::{
     config::Header,

@@ -3060,7 +3060,6 @@ dependencies = [
  "env_logger",
  "log",
  "peaq-client",
- "peaq-gen",
  "serde",
  "serde_json",
  "serde_qs",

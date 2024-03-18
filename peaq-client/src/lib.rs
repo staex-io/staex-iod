@@ -21,6 +21,8 @@ use subxt::{
 };
 use subxt_signer::sr25519::Keypair;
 
+pub use peaq_gen;
+
 pub type Error = Box<dyn std::error::Error>;
 
 pub struct Client {
