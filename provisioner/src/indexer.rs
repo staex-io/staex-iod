@@ -13,8 +13,10 @@ use axum::{
     Extension, Json, Router,
 };
 use log::{debug, error, info, trace};
-use peaq_client::Client;
-use peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated};
+use peaq_client::{
+    peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated},
+    Client,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{
@@ -29,9 +31,9 @@ use crate::{
 };
 
 pub(crate) async fn run(cfg: Config) -> Result<(), Error> {
-    let database = Database::new(&cfg.indexer).await?;
+    let database = Arc::new(Mutex::new(Database::new(&cfg.indexer).await?));
 
-    let mut indexer = Indexer::new(&cfg.clone(), database.clone()).await?;
+    let indexer = Indexer::new(&cfg.clone(), database.clone()).await?;
     tokio::spawn(async move {
         if let Err(e) = indexer.run(cfg.indexer.from_block).await {
             error!("failed to run indexer: {e}");
@@ -49,11 +51,11 @@ pub(crate) async fn run(cfg: Config) -> Result<(), Error> {
 
 struct Indexer {
     peaq_client: Client,
-    database: Database,
+    database: DatabasePointer,
 }
 
 impl Indexer {
-    async fn new(cfg: &Config, database: Database) -> Result<Self, Error> {
+    async fn new(cfg: &Config, database: DatabasePointer) -> Result<Self, Error> {
         let peaq_client = peaq_client::Client::new(&cfg.rpc_url).await?;
         Ok(Self {
             peaq_client,
@@ -61,7 +63,7 @@ impl Indexer {
         })
     }
 
-    async fn run(&mut self, from_block: u64) -> Result<(), Error> {
+    async fn run(&self, from_block: u64) -> Result<(), Error> {
         let mut current_block_index: u64 = from_block;
         loop {
             trace!("get events in {} block", current_block_index);
@@ -83,7 +85,7 @@ impl Indexer {
         }
     }
 
-    async fn process_event(&mut self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
+    async fn process_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
         if event.pallet_name() != AttributeAdded::PALLET {
             return Ok(());
         }
@@ -95,10 +97,7 @@ impl Indexer {
         }
     }
 
-    async fn process_added_event(
-        &mut self,
-        event: EventDetails<PolkadotConfig>,
-    ) -> Result<(), Error> {
+    async fn process_added_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
         let event = event
             .as_event::<AttributeAdded>()?
             .ok_or_else::<Error, _>(|| "event is not AttributeAdded".into())?;
@@ -107,11 +106,11 @@ impl Indexer {
         }
         let address = &event.1.to_string();
         debug!("added event received for {}", address);
-        self.database.save(address, event.3).await
+        self.database.lock().await.save(address, event.3).await
     }
 
     async fn process_updated_event(
-        &mut self,
+        &self,
         event: EventDetails<PolkadotConfig>,
     ) -> Result<(), Error> {
         let event = event
@@ -122,11 +121,11 @@ impl Indexer {
         }
         let address = &event.1.to_string();
         debug!("updated event received for {}", address);
-        self.database.save(address, event.3).await
+        self.database.lock().await.save(address, event.3).await
     }
 
     async fn process_removed_event(
-        &mut self,
+        &self,
         event: EventDetails<PolkadotConfig>,
     ) -> Result<(), Error> {
         let event = event
@@ -137,7 +136,7 @@ impl Indexer {
         }
         let address = &event.1.to_string();
         debug!("remove event received for {}", address);
-        self.database.delete(address).await
+        self.database.lock().await.delete(address).await
     }
 }
 
@@ -149,9 +148,10 @@ struct DatabaseDevice {
     updated_at: i64,
 }
 
-#[derive(Clone)]
+type DatabasePointer = Arc<Mutex<Database>>;
+
 struct Database {
-    conn: Arc<Mutex<SqliteConnection>>,
+    conn: SqliteConnection,
 }
 
 impl Database {
@@ -173,9 +173,7 @@ impl Database {
         let migrator = sqlx::migrate!("./migrations/");
         migrator.run_direct(&mut conn).await?;
 
-        Ok(Self {
-            conn: Arc::new(Mutex::new(conn)),
-        })
+        Ok(Self { conn })
     }
 
     async fn save(&mut self, address: &str, data: Vec<u8>) -> Result<(), Error> {
@@ -183,7 +181,6 @@ impl Database {
         let data: Vec<u8> = match &device {
             Device::V1(device) => serde_json::to_vec(&device)?,
         };
-        let mut conn = self.conn.lock().await;
         sqlx::query(
             r#"
                 insert into devices (address, version, data, updated_at) values (?1, ?2, ?3, ?4) 
@@ -194,17 +191,16 @@ impl Database {
         .bind(device.version())
         .bind(data)
         .bind(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
-        .execute(&mut *conn)
+        .execute(&mut self.conn)
         .await?;
         Ok(())
     }
 
-    async fn query(&self, params: GetDevicesParams) -> Result<Vec<DatabaseDevice>, Error> {
+    async fn query(&mut self, params: GetDevicesParams) -> Result<Vec<DatabaseDevice>, Error> {
         let mut query: QueryBuilder<sqlx::Sqlite> = Self::prepare_query::<sqlx::Sqlite>(&params)?;
         trace!("sql query: {}", query.sql());
         let query = query.build_query_as::<DatabaseDevice>();
-        let mut conn = self.conn.lock().await;
-        let devices = query.fetch_all(&mut *conn).await?;
+        let devices = query.fetch_all(&mut self.conn).await?;
         Ok(devices)
     }
 
@@ -246,10 +242,9 @@ impl Database {
     }
 
     async fn delete(&mut self, address: &str) -> Result<(), Error> {
-        let mut conn = self.conn.lock().await;
         sqlx::query("delete from devices where address = ?1")
             .bind(address)
-            .execute(&mut *conn)
+            .execute(&mut self.conn)
             .await?;
         Ok(())
     }
@@ -318,7 +313,7 @@ impl IntoResponse for ErrorResponse {
     }
 }
 
-async fn run_api(cfg: &config::Indexer, database: Database) -> Result<(), Error> {
+async fn run_api(cfg: &config::Indexer, database: DatabasePointer) -> Result<(), Error> {
     let app = Router::new()
         .route("/devices", get(get_devices))
         .layer(Extension(database))
@@ -410,14 +405,14 @@ struct DeviceResponse {
 
 async fn get_devices(
     QueryArray(params): QueryArray<GetDevicesParams>,
-    Extension(database): Extension<Database>,
+    Extension(database): Extension<DatabasePointer>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
     for filter in &params.filters {
         if Database::is_filter_allowed(filter).is_err() {
             return Err(format!("{} field is not supporting for filtering", filter.field).into());
         }
     }
-    let internal_devices = database.query(params).await?;
+    let internal_devices = database.lock().await.query(params).await?;
     let mut external_devices: Vec<DeviceResponse> = Vec::with_capacity(internal_devices.len());
     for internal_device in &internal_devices {
         let device: serde_json::Value = {

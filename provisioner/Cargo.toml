@@ -5,10 +5,9 @@ edition = "2021"
 
 [dependencies]
 peaq-client = { path = "../peaq-client" }
-peaq-gen = { path = "../peaq-gen" }
 subxt = { workspace = true }
 subxt-signer = { workspace = true }
-tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
+tokio = { workspace = true }
 serde = { version = "1.0.197", features = [], default-features = false }
 serde_json = { version = "1.0.114", features = [], default-features = false }
 log = { version = "0.4.21", features = [], default-features = false }
