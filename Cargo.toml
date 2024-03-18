@@ -1,6 +1,6 @@
 [workspace]
-members = ["contracts/ink/did", "provisioner", "peaq-gen", "peaq-client"]
-default-members = ["contracts/ink/did", "provisioner", "peaq-gen", "peaq-client"]
+members = ["provisioner", "peaq-gen", "peaq-client"]
+default-members = ["provisioner", "peaq-gen", "peaq-client"]
 resolver = "2"
 
 [workspace.dependencies]
