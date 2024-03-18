@@ -404,8 +404,8 @@ struct DeviceResponse {
 }
 
 async fn get_devices(
-    QueryArray(params): QueryArray<GetDevicesParams>,
     Extension(database): Extension<DatabasePointer>,
+    QueryArray(params): QueryArray<GetDevicesParams>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
     for filter in &params.filters {
         if Database::is_filter_allowed(filter).is_err() {
