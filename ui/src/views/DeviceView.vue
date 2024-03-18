@@ -38,19 +38,26 @@ export default {
     <div class="card-content">
       <div class="card-field">
         <span class="card-field-label">Address</span>
-        <span class="card-field-value">{{ device.address }}</span>
+        <div class="h-scroll-container">
+          <span class="card-field-value">{{ device.address }}</span>
+        </div>
       </div>
       <div class="card-field">
         <span class="card-field-label">Data type</span>
         <span class="card-field-value">{{ device.device.data_type }}</span>
       </div>
       <div class="card-field">
-        <span class="card-field-label">Location</span>
-        <span class="card-field-value">
-          <a :href="`https://www.google.com/maps/place/${device.device.location}`" target="_blank">
-            {{ device.device.location }}
-          </a>
-        </span>
+        <div class="h-scroll-container">
+          <span class="card-field-label">Location</span>
+          <span class="card-field-value">
+            <a
+              :href="`https://www.google.com/maps/place/${device.device.location}`"
+              target="_blank"
+            >
+              {{ device.device.location }}
+            </a>
+          </span>
+        </div>
       </div>
       <div class="card-field">
         <span class="card-field-label">Price to access data</span>
@@ -62,10 +69,12 @@ export default {
       </div>
       <hr />
       <div class="card-field">
-        <span class="card-field-label">Additional</span>
-        <span class="card-field-value">
-          <pre>{{ JSON.stringify(device.device.additional, null, 4) }}</pre>
-        </span>
+        <div class="h-scroll-container">
+          <span class="card-field-label">Additional</span>
+          <span class="card-field-value">
+            <pre>{{ JSON.stringify(device.device.additional, null, 4) }}</pre>
+          </span>
+        </div>
       </div>
     </div>
   </div>
