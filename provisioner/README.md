@@ -50,10 +50,6 @@ host = "127.0.0.1"
 port = 4698
 ```
 
-## ink! smart contracts research
-
-In [main.rs.old.txt](./src/main.rs.old.txt) research about interaction with ink! smart contracts located.
-
 ## Get devices by HTTP API
 
 ```shell
