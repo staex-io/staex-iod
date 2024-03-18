@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: Staex IoD
+  version: 0.1.0
+paths:
+  /devices:
+    get:
+      summary: Query device list or single device
+      operationId: Query
+      parameters:
+        - in: query
+          name: address
+          schema:
+            type: string
+          example: 5CwQRPkqmUg5arWuJtw2qoGRL4oRDjguzmrcrSSsv35Cuv3s
+        - in: query
+          name: filters
+          schema:
+            type: array
+            items:
+              properties:
+                field:
+                  type: string
+                  example: price
+                condition:
+                  $ref: "#/components/schemas/Condition"
+                value:
+                  $ref: "#/components/schemas/Value"
+          example: "?filters[0][field]=data_type&filters[0][condition]==&filters[0][value]=cctv-camera"
+        - in: query
+          name: limit
+          schema:
+            type: number
+          example: 10
+        - in: query
+          name: offset
+          schema:
+            type: number
+          example: 0
+      responses:
+        200:
+          description: Ok
+components:
+  schemas:
+    Condition:
+      type: string
+      example:
+        oneOf:
+          - "="
+          - ">"
+          - "<"
+    Value:
+      oneOf:
+        - type: string
+          example: 6634.5123
+        - type: number
+          example: 6634.5123
