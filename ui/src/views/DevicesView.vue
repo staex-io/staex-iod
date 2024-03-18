@@ -6,6 +6,7 @@ export default {
       limit: 2,
       offset: 0,
       devices: [],
+      newDevicesLength: 0,
       filterField: '',
       filterCondition: '',
       filterValue: '',
@@ -34,7 +35,8 @@ export default {
             return
         }
         let data = await res.json()
-        if (this.offset !== 0 && data.length === 0) return
+        this.newDevicesLength = data.length
+        if (this.offset !== 0 && this.newDevicesLength === 0) return
         this.devices = data
       } catch (e) {
         console.error(e)
@@ -58,11 +60,11 @@ export default {
       this.getDevices()
     },
     right() {
-      if (this.devices.length === 0) {
-        return
-      }
+      const oldOffset = this.offset
       this.offset = this.offset + this.limit
-      this.getDevices()
+      this.getDevices().then(() => {
+        if (this.newDevicesLength === 0) this.offset = oldOffset
+      })
     },
     clearFilter() {
       this.offset = 0
