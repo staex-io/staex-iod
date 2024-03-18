@@ -126,7 +126,7 @@ export default {
     </div>
   </div>
   <h1>Devices</h1>
-  <div>
+  <div class="h-scroll-container">
     <table v-if="devices.length">
       <thead>
         <tr>
@@ -145,22 +145,26 @@ export default {
           <td class="mouse-pointer" @click="() => goToDevicePage(address)">
             {{ address.slice(0, 4) + '..' + address.slice(44, 48) }}
           </td>
-          <td>{{ data_type }}</td>
+          <td>{{ data_type.slice(0, 10) }}</td>
           <td>
             <a :href="`https://www.google.com/maps/place/${location}`" target="_blank">{{
               location
             }}</a>
           </td>
-          <td>{{ price_access }}</td>
-          <td>{{ price_pin }}</td>
+          <td>
+            {{ Intl.NumberFormat('en-IN', { maximumSignificantDigits: 10 }).format(price_access) }}
+          </td>
+          <td>
+            {{ Intl.NumberFormat('en-IN', { maximumSignificantDigits: 10 }).format(price_pin) }}
+          </td>
         </tr>
       </tbody>
     </table>
     <p v-else>There are no devices at the moment.</p>
-    <div class="container pagination">
-      <button class="left-button" type="button" @click="left">Left</button>
-      <button class="right-button" type="button" @click="right">Right</button>
-    </div>
+  </div>
+  <div class="container pagination">
+    <button class="left-button" type="button" @click="left">Left</button>
+    <button class="right-button" type="button" @click="right">Right</button>
   </div>
 </template>
 
