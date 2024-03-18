@@ -2845,6 +2845,7 @@ dependencies = [
  "peaq-gen",
  "subxt",
  "subxt-signer",
+ "tokio",
 ]
 
 [[package]]

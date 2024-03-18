@@ -3,7 +3,10 @@ use std::ops::Deref;
 use peaq_gen::api::peaq_did;
 use subxt::{
     backend::{
-        legacy::{rpc_methods::BlockDetails, LegacyRpcMethods},
+        legacy::{
+            rpc_methods::{BlockDetails, SystemProperties},
+            LegacyRpcMethods,
+        },
         rpc::RpcClient,
     },
     blocks::Block,
@@ -36,6 +39,10 @@ impl Client {
             rpc,
             rpc_legacy,
         })
+    }
+
+    pub async fn get_system_properties(&self) -> Result<SystemProperties, Error> {
+        Ok(self.rpc_legacy.system_properties().await?)
     }
 
     pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
@@ -253,5 +260,21 @@ impl Deref for SignerClient {
     type Target = Client;
     fn deref(&self) -> &Self::Target {
         &self.client
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Client;
+
+    #[tokio::test]
+    async fn get_token_information() {
+        let client = Client::new("wss://rpcpc1-qa.agung.peaq.network").await.unwrap();
+        let system_properties = client.get_system_properties().await.unwrap();
+        let token_decimals: u64 =
+            system_properties.get("tokenDecimals").unwrap().as_number().unwrap().as_u64().unwrap();
+        let token_symbol: String = system_properties.get("tokenSymbol").unwrap().to_string();
+        assert_eq!(18, token_decimals);
+        assert_eq!("\"AGUNG\"", token_symbol);
     }
 }
