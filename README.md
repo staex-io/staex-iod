@@ -14,3 +14,7 @@ The goal of this project is to create a Web3 IoT data infrastructure with a stab
 - Run [indexer](./provisioner/README.md)
 - Run [provisioner](./provisioner/README.md)
 - Run [UI](./ui/README.md)
+
+## RBAC
+
+![alt text](<images/peaq_rbac.png>)

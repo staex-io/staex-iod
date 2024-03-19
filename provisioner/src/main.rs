@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr};
 use clap::{Parser, Subcommand};
 use config::Faucet;
 use log::{error, info, warn, Level, LevelFilter};
-use peaq_client::peaq_gen::api::peaq_did::events::AttributeRead;
+use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
 use serde::{Deserialize, Serialize};
 use subxt::{
     config::Header,
@@ -13,7 +13,7 @@ use subxt::{
     PolkadotConfig,
 };
 use subxt_signer::{
-    bip39::{self, Mnemonic},
+    bip39::{self},
     sr25519::Keypair,
     SecretUri,
 };
@@ -220,7 +220,7 @@ impl App {
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance before: {}", balance);
 
-        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone(), &signer).await?;
+        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone()).await?;
 
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance after: {}", balance);
@@ -243,14 +243,6 @@ impl App {
         let value = serde_json::to_vec(&device)?;
         Ok(value)
     }
-}
-
-pub(crate) fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
-    let phrase = bip39::Mnemonic::generate(12)?;
-    let keypair = Keypair::from_phrase(&phrase, None)?;
-    let account_id: AccountId32 =
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-    Ok((phrase, keypair, account_id))
 }
 
 fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
