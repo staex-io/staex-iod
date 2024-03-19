@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use peaq_gen::api::peaq_did;
+use peaq_gen::api::{peaq_did, peaq_rbac};
 use subxt::{
     backend::{
         legacy::{
@@ -97,77 +97,17 @@ impl Client {
             .ok_or(subxt::Error::Other("last block is not found".into()))?;
         Ok(block)
     }
-}
 
-pub struct SignerClient {
-    client: Client,
-    keypair: Keypair,
-    peaq_did_api: peaq_did::calls::TransactionApi,
-}
-
-impl SignerClient {
-    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
-        let client = Client::new(rpc_url).await?;
-        Ok(Self {
-            client,
-            keypair,
-            peaq_did_api: peaq_did::calls::TransactionApi {},
-        })
-    }
-
-    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
-        let call =
-            self.peaq_did_api.add_attribute(self.address(), name.as_bytes().to_vec(), value, None);
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
-    }
-
-    pub async fn read_attribute<T, F>(
-        &self,
-        name: &str,
-        filter: Option<F>,
-    ) -> Result<Option<T>, Error>
-    where
-        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
-    {
-        let call = self.peaq_did_api.read_attribute(self.address(), name.as_bytes().to_vec());
-        let tx = self.submit_tx(&call, &self.keypair).await?;
-        match self.process_events(tx, filter).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
-                    // e.as_root_error() doesn't work, so we get second byte
-                    // because it contains error index.
-                    let a = e.bytes()[1..2].to_vec();
-                    // And decode error manually.
-                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
-                    if let peaq_did::Error::AttributeNotFound = did_err {
-                        Ok(None)
-                    } else {
-                        Err(e.into())
-                    }
-                } else {
-                    Err(e.into())
-                }
-            }
-        }
-    }
-
-    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
-        let call = self.peaq_did_api.update_attribute(
-            self.address(),
-            name.as_bytes().to_vec(),
-            value,
-            None,
-        );
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
-    }
-
-    pub async fn remove_attribute(&self, name: &str) -> Result<(), Error> {
-        let call = self.peaq_did_api.remove_attribute(self.address(), name.as_bytes().to_vec());
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
+    pub async fn get_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
+        let last_block = self.get_last_block().await?;
+        let account_nonce = self
+            .api
+            .blocks()
+            .at(last_block.block.header.hash())
+            .await?
+            .account_nonce(account_id)
+            .await?;
+        Ok(account_nonce)
     }
 
     pub async fn transfer<S>(
@@ -186,7 +126,7 @@ impl SignerClient {
         Ok(())
     }
 
-    async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(
+    pub async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(
         &self,
         call: &Call,
         signer: &S,
@@ -194,7 +134,6 @@ impl SignerClient {
         let account_id = signer.account_id();
         let account_nonce = self.get_nonce(&account_id).await?;
         let mut tx = self
-            .client
             .api
             .tx()
             .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
@@ -218,19 +157,6 @@ impl SignerClient {
         Err(RpcError::SubscriptionDropped.into())
     }
 
-    async fn get_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
-        let last_block = self.client.get_last_block().await?;
-        let account_nonce = self
-            .client
-            .api
-            .blocks()
-            .at(last_block.block.header.hash())
-            .await?
-            .account_nonce(account_id)
-            .await?;
-        Ok(account_nonce)
-    }
-
     async fn process_events<T, F>(
         &self,
         tx: TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>,
@@ -252,6 +178,26 @@ impl SignerClient {
         }
         Ok(None)
     }
+}
+
+pub struct SignerClient {
+    client: Client,
+    keypair: Keypair,
+}
+
+impl SignerClient {
+    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
+        let client = Client::new(rpc_url).await?;
+        Ok(Self { client, keypair })
+    }
+
+    pub fn did(&self) -> DID {
+        DID {
+            client: &self.client,
+            signer_client: self,
+            peaq_did_api: peaq_did::calls::TransactionApi {},
+        }
+    }
 
     fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
@@ -264,6 +210,88 @@ impl Deref for SignerClient {
         &self.client
     }
 }
+
+// todo: describe did client
+pub struct DID<'a> {
+    client: &'a Client,
+    signer_client: &'a SignerClient,
+    peaq_did_api: peaq_did::calls::TransactionApi,
+}
+
+impl<'a> DID<'a> {
+    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+        let call = self.peaq_did_api.add_attribute(
+            self.signer_client.address(),
+            name.as_bytes().to_vec(),
+            value,
+            None,
+        );
+        self.signer_client.submit_tx(&call, &self.signer_client.keypair).await?;
+        Ok(())
+    }
+
+    pub async fn read_attribute<T, F>(
+        &self,
+        name: &str,
+        filter: Option<F>,
+    ) -> Result<Option<T>, Error>
+    where
+        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
+    {
+        let call = self
+            .peaq_did_api
+            .read_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        let tx = self.signer_client.submit_tx(&call, &self.signer_client.keypair).await?;
+        match self.client.process_events(tx, filter).await {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
+                    // e.as_root_error() doesn't work, so we get second byte
+                    // because it contains error index.
+                    let a = e.bytes()[1..2].to_vec();
+                    // And decode error manually.
+                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
+                    if let peaq_did::Error::AttributeNotFound = did_err {
+                        Ok(None)
+                    } else {
+                        Err(e.into())
+                    }
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
+    }
+
+    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+        let call = self.peaq_did_api.update_attribute(
+            self.signer_client.address(),
+            name.as_bytes().to_vec(),
+            value,
+            None,
+        );
+        self.signer_client.submit_tx(&call, &self.signer_client.keypair).await?;
+        Ok(())
+    }
+
+    pub async fn remove_attribute(&self, name: &str) -> Result<(), Error> {
+        let call = self
+            .peaq_did_api
+            .remove_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        self.signer_client.submit_tx(&call, &self.signer_client.keypair).await?;
+        Ok(())
+    }
+}
+
+// todo: describe rbac client
+#[allow(clippy::upper_case_acronyms)]
+struct RBAC<'a> {
+    client: &'a Client,
+    signer_client: &'a SignerClient,
+    peaq_rbac_api: peaq_rbac::calls::TransactionApi,
+}
+
+impl<'a> RBAC<'a> {}
 
 #[cfg(test)]
 mod tests {

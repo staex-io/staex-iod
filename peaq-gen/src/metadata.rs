@@ -6,7 +6,7 @@ pub mod api {
     mod root_mod {
         pub use super::*;
     }
-    pub static PALLETS: [&str; 3usize] = ["System", "Balances", "PeaqDid"];
+    pub static PALLETS: [&str; 4usize] = ["System", "Balances", "PeaqDid", "PeaqRbac"];
     pub static RUNTIME_APIS: [&str; 0usize] = [];
     #[doc = r" The error type returned when there is a runtime issue."]
     pub type DispatchError = runtime_types::sp_runtime::DispatchError;
@@ -60,6 +60,9 @@ pub mod api {
         pub fn peaq_did(&self) -> peaq_did::storage::StorageApi {
             peaq_did::storage::StorageApi
         }
+        pub fn peaq_rbac(&self) -> peaq_rbac::storage::StorageApi {
+            peaq_rbac::storage::StorageApi
+        }
     }
     pub struct TransactionApi;
     impl TransactionApi {
@@ -72,6 +75,9 @@ pub mod api {
         pub fn peaq_did(&self) -> peaq_did::calls::TransactionApi {
             peaq_did::calls::TransactionApi
         }
+        pub fn peaq_rbac(&self) -> peaq_rbac::calls::TransactionApi {
+            peaq_rbac::calls::TransactionApi
+        }
     }
     #[doc = r" check whether the metadata provided is aligned with this statically generated code."]
     pub fn is_codegen_valid_for(metadata: &::subxt::Metadata) -> bool {
@@ -82,9 +88,9 @@ pub mod api {
             .hash();
         runtime_metadata_hash
             == [
-                161u8, 143u8, 184u8, 5u8, 32u8, 3u8, 3u8, 121u8, 105u8, 225u8, 71u8, 246u8, 227u8,
-                137u8, 154u8, 21u8, 162u8, 1u8, 231u8, 0u8, 188u8, 158u8, 101u8, 25u8, 167u8,
-                190u8, 230u8, 80u8, 141u8, 181u8, 11u8, 250u8,
+                33u8, 30u8, 145u8, 226u8, 104u8, 165u8, 13u8, 145u8, 43u8, 57u8, 96u8, 8u8, 90u8,
+                73u8, 31u8, 221u8, 128u8, 20u8, 223u8, 176u8, 4u8, 213u8, 71u8, 252u8, 194u8,
+                166u8, 105u8, 90u8, 51u8, 74u8, 84u8, 217u8,
             ]
     }
     pub mod system {
@@ -885,9 +891,9 @@ pub mod api {
                         "Events",
                         vec![],
                         [
-                            216u8, 17u8, 151u8, 128u8, 95u8, 180u8, 249u8, 232u8, 114u8, 147u8,
-                            241u8, 213u8, 47u8, 50u8, 14u8, 143u8, 233u8, 29u8, 109u8, 240u8, 3u8,
-                            93u8, 105u8, 162u8, 95u8, 191u8, 181u8, 23u8, 55u8, 243u8, 20u8, 128u8,
+                            227u8, 137u8, 42u8, 198u8, 5u8, 77u8, 97u8, 179u8, 75u8, 205u8, 177u8,
+                            246u8, 150u8, 227u8, 38u8, 88u8, 91u8, 59u8, 236u8, 29u8, 254u8, 199u8,
+                            170u8, 146u8, 57u8, 82u8, 185u8, 176u8, 40u8, 233u8, 166u8, 46u8,
                         ],
                     )
                 }
@@ -2866,6 +2872,2286 @@ pub mod api {
             }
         }
     }
+    pub mod peaq_rbac {
+        use super::root_mod;
+        use super::runtime_types;
+        pub type Error = runtime_types::peaq_pallet_rbac::pallet::Error;
+        pub type Call = runtime_types::peaq_pallet_rbac::pallet::Call;
+        pub mod calls {
+            use super::root_mod;
+            use super::runtime_types;
+            type DispatchError = runtime_types::sp_runtime::DispatchError;
+            pub mod types {
+                use super::runtime_types;
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchRole {
+                    pub owner: fetch_role::Owner,
+                    pub entity: fetch_role::Entity,
+                }
+                pub mod fetch_role {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type Entity = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchRoles {
+                    pub owner: fetch_roles::Owner,
+                }
+                pub mod fetch_roles {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchRoles {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_roles";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AddRole {
+                    pub role_id: add_role::RoleId,
+                    pub name: add_role::Name,
+                }
+                pub mod add_role {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AddRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "add_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UpdateRole {
+                    pub role_id: update_role::RoleId,
+                    pub name: update_role::Name,
+                }
+                pub mod update_role {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UpdateRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "update_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct DisableRole {
+                    pub role_id: disable_role::RoleId,
+                }
+                pub mod disable_role {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for DisableRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "disable_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchUserRoles {
+                    pub owner: fetch_user_roles::Owner,
+                    pub user_id: fetch_user_roles::UserId,
+                }
+                pub mod fetch_user_roles {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchUserRoles {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_user_roles";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AssignRoleToUser {
+                    pub role_id: assign_role_to_user::RoleId,
+                    pub user_id: assign_role_to_user::UserId,
+                }
+                pub mod assign_role_to_user {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AssignRoleToUser {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "assign_role_to_user";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UnassignRoleToUser {
+                    pub role_id: unassign_role_to_user::RoleId,
+                    pub user_id: unassign_role_to_user::UserId,
+                }
+                pub mod unassign_role_to_user {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UnassignRoleToUser {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "unassign_role_to_user";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchPermission {
+                    pub owner: fetch_permission::Owner,
+                    pub permission_id: fetch_permission::PermissionId,
+                }
+                pub mod fetch_permission {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchPermission {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_permission";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchPermissions {
+                    pub owner: fetch_permissions::Owner,
+                }
+                pub mod fetch_permissions {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchPermissions {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_permissions";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AddPermission {
+                    pub permission_id: add_permission::PermissionId,
+                    pub name: add_permission::Name,
+                }
+                pub mod add_permission {
+                    use super::runtime_types;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AddPermission {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "add_permission";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UpdatePermission {
+                    pub permission_id: update_permission::PermissionId,
+                    pub name: update_permission::Name,
+                }
+                pub mod update_permission {
+                    use super::runtime_types;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UpdatePermission {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "update_permission";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct DisablePermission {
+                    pub permission_id: disable_permission::PermissionId,
+                }
+                pub mod disable_permission {
+                    use super::runtime_types;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for DisablePermission {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "disable_permission";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchRolePermissions {
+                    pub owner: fetch_role_permissions::Owner,
+                    pub role_id: fetch_role_permissions::RoleId,
+                }
+                pub mod fetch_role_permissions {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchRolePermissions {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_role_permissions";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AssignPermissionToRole {
+                    pub permission_id: assign_permission_to_role::PermissionId,
+                    pub role_id: assign_permission_to_role::RoleId,
+                }
+                pub mod assign_permission_to_role {
+                    use super::runtime_types;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AssignPermissionToRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "assign_permission_to_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UnassignPermissionToRole {
+                    pub permission_id: unassign_permission_to_role::PermissionId,
+                    pub role_id: unassign_permission_to_role::RoleId,
+                }
+                pub mod unassign_permission_to_role {
+                    use super::runtime_types;
+                    pub type PermissionId = [::core::primitive::u8; 32usize];
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UnassignPermissionToRole {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "unassign_permission_to_role";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchGroup {
+                    pub owner: fetch_group::Owner,
+                    pub group_id: fetch_group::GroupId,
+                }
+                pub mod fetch_group {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchGroups {
+                    pub owner: fetch_groups::Owner,
+                }
+                pub mod fetch_groups {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchGroups {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_groups";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AddGroup {
+                    pub group_id: add_group::GroupId,
+                    pub name: add_group::Name,
+                }
+                pub mod add_group {
+                    use super::runtime_types;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AddGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "add_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UpdateGroup {
+                    pub group_id: update_group::GroupId,
+                    pub name: update_group::Name,
+                }
+                pub mod update_group {
+                    use super::runtime_types;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                    pub type Name = ::std::vec::Vec<::core::primitive::u8>;
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UpdateGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "update_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct DisableGroup {
+                    pub group_id: disable_group::GroupId,
+                }
+                pub mod disable_group {
+                    use super::runtime_types;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for DisableGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "disable_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AssignRoleToGroup {
+                    pub role_id: assign_role_to_group::RoleId,
+                    pub group_id: assign_role_to_group::GroupId,
+                }
+                pub mod assign_role_to_group {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AssignRoleToGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "assign_role_to_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UnassignRoleToGroup {
+                    pub role_id: unassign_role_to_group::RoleId,
+                    pub group_id: unassign_role_to_group::GroupId,
+                }
+                pub mod unassign_role_to_group {
+                    use super::runtime_types;
+                    pub type RoleId = [::core::primitive::u8; 32usize];
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UnassignRoleToGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "unassign_role_to_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchGroupRoles {
+                    pub owner: fetch_group_roles::Owner,
+                    pub group_id: fetch_group_roles::GroupId,
+                }
+                pub mod fetch_group_roles {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchGroupRoles {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_group_roles";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct AssignUserToGroup {
+                    pub user_id: assign_user_to_group::UserId,
+                    pub group_id: assign_user_to_group::GroupId,
+                }
+                pub mod assign_user_to_group {
+                    use super::runtime_types;
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for AssignUserToGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "assign_user_to_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct UnassignUserToGroup {
+                    pub user_id: unassign_user_to_group::UserId,
+                    pub group_id: unassign_user_to_group::GroupId,
+                }
+                pub mod unassign_user_to_group {
+                    use super::runtime_types;
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for UnassignUserToGroup {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "unassign_user_to_group";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchUserGroups {
+                    pub owner: fetch_user_groups::Owner,
+                    pub user_id: fetch_user_groups::UserId,
+                }
+                pub mod fetch_user_groups {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchUserGroups {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_user_groups";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchUserPermissions {
+                    pub owner: fetch_user_permissions::Owner,
+                    pub user_id: fetch_user_permissions::UserId,
+                }
+                pub mod fetch_user_permissions {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type UserId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchUserPermissions {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_user_permissions";
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct FetchGroupPermissions {
+                    pub owner: fetch_group_permissions::Owner,
+                    pub group_id: fetch_group_permissions::GroupId,
+                }
+                pub mod fetch_group_permissions {
+                    use super::runtime_types;
+                    pub type Owner = ::subxt::utils::AccountId32;
+                    pub type GroupId = [::core::primitive::u8; 32usize];
+                }
+                impl ::subxt::blocks::StaticExtrinsic for FetchGroupPermissions {
+                    const PALLET: &'static str = "PeaqRbac";
+                    const CALL: &'static str = "fetch_group_permissions";
+                }
+            }
+            pub struct TransactionApi;
+            impl TransactionApi {
+                pub fn fetch_role(
+                    &self,
+                    owner: types::fetch_role::Owner,
+                    entity: types::fetch_role::Entity,
+                ) -> ::subxt::tx::Payload<types::FetchRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_role",
+                        types::FetchRole { owner, entity },
+                        [
+                            2u8, 79u8, 48u8, 229u8, 143u8, 88u8, 149u8, 20u8, 11u8, 168u8, 180u8,
+                            178u8, 96u8, 113u8, 155u8, 157u8, 92u8, 240u8, 48u8, 185u8, 203u8, 1u8,
+                            0u8, 12u8, 7u8, 86u8, 193u8, 24u8, 214u8, 64u8, 132u8, 53u8,
+                        ],
+                    )
+                }
+                pub fn fetch_roles(
+                    &self,
+                    owner: types::fetch_roles::Owner,
+                ) -> ::subxt::tx::Payload<types::FetchRoles> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_roles",
+                        types::FetchRoles { owner },
+                        [
+                            181u8, 71u8, 25u8, 79u8, 145u8, 190u8, 33u8, 100u8, 231u8, 176u8,
+                            239u8, 132u8, 53u8, 102u8, 243u8, 92u8, 118u8, 179u8, 124u8, 7u8,
+                            201u8, 172u8, 191u8, 100u8, 95u8, 98u8, 81u8, 91u8, 203u8, 3u8, 184u8,
+                            146u8,
+                        ],
+                    )
+                }
+                pub fn add_role(
+                    &self,
+                    role_id: types::add_role::RoleId,
+                    name: types::add_role::Name,
+                ) -> ::subxt::tx::Payload<types::AddRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "add_role",
+                        types::AddRole { role_id, name },
+                        [
+                            31u8, 233u8, 38u8, 129u8, 99u8, 53u8, 217u8, 151u8, 80u8, 152u8, 124u8,
+                            159u8, 183u8, 124u8, 86u8, 222u8, 201u8, 185u8, 205u8, 138u8, 239u8,
+                            56u8, 30u8, 140u8, 91u8, 3u8, 139u8, 87u8, 213u8, 202u8, 207u8, 117u8,
+                        ],
+                    )
+                }
+                pub fn update_role(
+                    &self,
+                    role_id: types::update_role::RoleId,
+                    name: types::update_role::Name,
+                ) -> ::subxt::tx::Payload<types::UpdateRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "update_role",
+                        types::UpdateRole { role_id, name },
+                        [
+                            8u8, 100u8, 52u8, 161u8, 169u8, 251u8, 219u8, 87u8, 127u8, 129u8, 40u8,
+                            234u8, 198u8, 131u8, 158u8, 206u8, 148u8, 85u8, 68u8, 167u8, 8u8,
+                            154u8, 212u8, 87u8, 120u8, 234u8, 30u8, 221u8, 186u8, 44u8, 129u8,
+                            174u8,
+                        ],
+                    )
+                }
+                pub fn disable_role(
+                    &self,
+                    role_id: types::disable_role::RoleId,
+                ) -> ::subxt::tx::Payload<types::DisableRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "disable_role",
+                        types::DisableRole { role_id },
+                        [
+                            40u8, 116u8, 160u8, 60u8, 194u8, 110u8, 106u8, 190u8, 123u8, 211u8,
+                            125u8, 254u8, 254u8, 22u8, 24u8, 65u8, 98u8, 174u8, 150u8, 156u8,
+                            168u8, 62u8, 2u8, 17u8, 241u8, 221u8, 1u8, 29u8, 135u8, 255u8, 139u8,
+                            70u8,
+                        ],
+                    )
+                }
+                pub fn fetch_user_roles(
+                    &self,
+                    owner: types::fetch_user_roles::Owner,
+                    user_id: types::fetch_user_roles::UserId,
+                ) -> ::subxt::tx::Payload<types::FetchUserRoles> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_user_roles",
+                        types::FetchUserRoles { owner, user_id },
+                        [
+                            83u8, 51u8, 211u8, 101u8, 59u8, 61u8, 230u8, 38u8, 69u8, 214u8, 82u8,
+                            242u8, 245u8, 17u8, 83u8, 188u8, 114u8, 8u8, 118u8, 144u8, 52u8, 11u8,
+                            147u8, 69u8, 253u8, 74u8, 153u8, 59u8, 191u8, 233u8, 66u8, 112u8,
+                        ],
+                    )
+                }
+                pub fn assign_role_to_user(
+                    &self,
+                    role_id: types::assign_role_to_user::RoleId,
+                    user_id: types::assign_role_to_user::UserId,
+                ) -> ::subxt::tx::Payload<types::AssignRoleToUser> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "assign_role_to_user",
+                        types::AssignRoleToUser { role_id, user_id },
+                        [
+                            242u8, 250u8, 144u8, 112u8, 221u8, 143u8, 163u8, 0u8, 100u8, 64u8,
+                            251u8, 15u8, 66u8, 217u8, 49u8, 122u8, 105u8, 203u8, 186u8, 225u8,
+                            210u8, 131u8, 240u8, 63u8, 139u8, 25u8, 55u8, 142u8, 118u8, 248u8,
+                            24u8, 231u8,
+                        ],
+                    )
+                }
+                pub fn unassign_role_to_user(
+                    &self,
+                    role_id: types::unassign_role_to_user::RoleId,
+                    user_id: types::unassign_role_to_user::UserId,
+                ) -> ::subxt::tx::Payload<types::UnassignRoleToUser> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "unassign_role_to_user",
+                        types::UnassignRoleToUser { role_id, user_id },
+                        [
+                            215u8, 94u8, 195u8, 91u8, 149u8, 37u8, 128u8, 37u8, 164u8, 109u8, 14u8,
+                            175u8, 145u8, 138u8, 69u8, 121u8, 44u8, 247u8, 30u8, 98u8, 250u8,
+                            172u8, 198u8, 59u8, 87u8, 47u8, 2u8, 88u8, 103u8, 99u8, 196u8, 191u8,
+                        ],
+                    )
+                }
+                pub fn fetch_permission(
+                    &self,
+                    owner: types::fetch_permission::Owner,
+                    permission_id: types::fetch_permission::PermissionId,
+                ) -> ::subxt::tx::Payload<types::FetchPermission> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_permission",
+                        types::FetchPermission {
+                            owner,
+                            permission_id,
+                        },
+                        [
+                            76u8, 36u8, 180u8, 235u8, 35u8, 131u8, 115u8, 250u8, 131u8, 174u8,
+                            12u8, 133u8, 36u8, 189u8, 12u8, 2u8, 203u8, 252u8, 49u8, 11u8, 91u8,
+                            10u8, 250u8, 73u8, 16u8, 121u8, 178u8, 13u8, 195u8, 93u8, 126u8, 82u8,
+                        ],
+                    )
+                }
+                pub fn fetch_permissions(
+                    &self,
+                    owner: types::fetch_permissions::Owner,
+                ) -> ::subxt::tx::Payload<types::FetchPermissions> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_permissions",
+                        types::FetchPermissions { owner },
+                        [
+                            90u8, 44u8, 201u8, 116u8, 188u8, 128u8, 226u8, 41u8, 131u8, 61u8,
+                            125u8, 253u8, 224u8, 179u8, 249u8, 7u8, 167u8, 33u8, 252u8, 78u8,
+                            228u8, 14u8, 117u8, 246u8, 95u8, 118u8, 198u8, 109u8, 74u8, 145u8, 4u8,
+                            153u8,
+                        ],
+                    )
+                }
+                pub fn add_permission(
+                    &self,
+                    permission_id: types::add_permission::PermissionId,
+                    name: types::add_permission::Name,
+                ) -> ::subxt::tx::Payload<types::AddPermission> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "add_permission",
+                        types::AddPermission {
+                            permission_id,
+                            name,
+                        },
+                        [
+                            186u8, 248u8, 200u8, 107u8, 114u8, 65u8, 138u8, 140u8, 99u8, 240u8,
+                            184u8, 203u8, 125u8, 219u8, 29u8, 190u8, 212u8, 163u8, 121u8, 39u8,
+                            26u8, 156u8, 217u8, 209u8, 247u8, 72u8, 148u8, 73u8, 196u8, 186u8,
+                            77u8, 36u8,
+                        ],
+                    )
+                }
+                pub fn update_permission(
+                    &self,
+                    permission_id: types::update_permission::PermissionId,
+                    name: types::update_permission::Name,
+                ) -> ::subxt::tx::Payload<types::UpdatePermission> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "update_permission",
+                        types::UpdatePermission {
+                            permission_id,
+                            name,
+                        },
+                        [
+                            20u8, 12u8, 134u8, 254u8, 55u8, 227u8, 149u8, 144u8, 19u8, 40u8, 64u8,
+                            30u8, 63u8, 163u8, 77u8, 96u8, 152u8, 226u8, 120u8, 168u8, 0u8, 29u8,
+                            53u8, 135u8, 166u8, 109u8, 76u8, 5u8, 116u8, 50u8, 228u8, 236u8,
+                        ],
+                    )
+                }
+                pub fn disable_permission(
+                    &self,
+                    permission_id: types::disable_permission::PermissionId,
+                ) -> ::subxt::tx::Payload<types::DisablePermission> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "disable_permission",
+                        types::DisablePermission { permission_id },
+                        [
+                            89u8, 167u8, 149u8, 4u8, 74u8, 92u8, 18u8, 49u8, 97u8, 147u8, 227u8,
+                            253u8, 97u8, 216u8, 63u8, 243u8, 210u8, 57u8, 17u8, 59u8, 191u8, 145u8,
+                            142u8, 123u8, 95u8, 146u8, 199u8, 41u8, 246u8, 41u8, 184u8, 12u8,
+                        ],
+                    )
+                }
+                pub fn fetch_role_permissions(
+                    &self,
+                    owner: types::fetch_role_permissions::Owner,
+                    role_id: types::fetch_role_permissions::RoleId,
+                ) -> ::subxt::tx::Payload<types::FetchRolePermissions> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_role_permissions",
+                        types::FetchRolePermissions { owner, role_id },
+                        [
+                            67u8, 248u8, 80u8, 155u8, 63u8, 21u8, 80u8, 194u8, 4u8, 172u8, 66u8,
+                            124u8, 108u8, 80u8, 97u8, 100u8, 252u8, 132u8, 235u8, 112u8, 170u8,
+                            199u8, 86u8, 100u8, 207u8, 142u8, 14u8, 57u8, 121u8, 42u8, 191u8,
+                            163u8,
+                        ],
+                    )
+                }
+                pub fn assign_permission_to_role(
+                    &self,
+                    permission_id: types::assign_permission_to_role::PermissionId,
+                    role_id: types::assign_permission_to_role::RoleId,
+                ) -> ::subxt::tx::Payload<types::AssignPermissionToRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "assign_permission_to_role",
+                        types::AssignPermissionToRole {
+                            permission_id,
+                            role_id,
+                        },
+                        [
+                            179u8, 159u8, 101u8, 88u8, 224u8, 80u8, 82u8, 133u8, 70u8, 140u8, 47u8,
+                            176u8, 87u8, 97u8, 10u8, 88u8, 139u8, 80u8, 177u8, 159u8, 253u8, 82u8,
+                            19u8, 199u8, 59u8, 182u8, 138u8, 121u8, 104u8, 186u8, 191u8, 71u8,
+                        ],
+                    )
+                }
+                pub fn unassign_permission_to_role(
+                    &self,
+                    permission_id: types::unassign_permission_to_role::PermissionId,
+                    role_id: types::unassign_permission_to_role::RoleId,
+                ) -> ::subxt::tx::Payload<types::UnassignPermissionToRole> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "unassign_permission_to_role",
+                        types::UnassignPermissionToRole {
+                            permission_id,
+                            role_id,
+                        },
+                        [
+                            181u8, 229u8, 226u8, 127u8, 60u8, 248u8, 5u8, 243u8, 170u8, 98u8,
+                            180u8, 249u8, 64u8, 203u8, 170u8, 172u8, 183u8, 121u8, 57u8, 32u8,
+                            72u8, 14u8, 20u8, 81u8, 60u8, 27u8, 158u8, 46u8, 165u8, 98u8, 246u8,
+                            129u8,
+                        ],
+                    )
+                }
+                pub fn fetch_group(
+                    &self,
+                    owner: types::fetch_group::Owner,
+                    group_id: types::fetch_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::FetchGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_group",
+                        types::FetchGroup { owner, group_id },
+                        [
+                            138u8, 36u8, 169u8, 60u8, 164u8, 217u8, 159u8, 46u8, 155u8, 14u8, 41u8,
+                            41u8, 142u8, 241u8, 103u8, 8u8, 179u8, 125u8, 226u8, 254u8, 15u8,
+                            214u8, 3u8, 57u8, 55u8, 162u8, 246u8, 218u8, 225u8, 58u8, 51u8, 175u8,
+                        ],
+                    )
+                }
+                pub fn fetch_groups(
+                    &self,
+                    owner: types::fetch_groups::Owner,
+                ) -> ::subxt::tx::Payload<types::FetchGroups> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_groups",
+                        types::FetchGroups { owner },
+                        [
+                            106u8, 133u8, 44u8, 97u8, 103u8, 203u8, 255u8, 116u8, 44u8, 188u8,
+                            15u8, 170u8, 40u8, 59u8, 45u8, 180u8, 239u8, 6u8, 83u8, 211u8, 34u8,
+                            91u8, 93u8, 129u8, 103u8, 95u8, 13u8, 15u8, 250u8, 38u8, 137u8, 90u8,
+                        ],
+                    )
+                }
+                pub fn add_group(
+                    &self,
+                    group_id: types::add_group::GroupId,
+                    name: types::add_group::Name,
+                ) -> ::subxt::tx::Payload<types::AddGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "add_group",
+                        types::AddGroup { group_id, name },
+                        [
+                            246u8, 233u8, 55u8, 76u8, 172u8, 0u8, 193u8, 237u8, 60u8, 59u8, 16u8,
+                            97u8, 115u8, 80u8, 75u8, 44u8, 116u8, 118u8, 252u8, 109u8, 19u8, 125u8,
+                            123u8, 238u8, 41u8, 107u8, 220u8, 65u8, 97u8, 46u8, 168u8, 115u8,
+                        ],
+                    )
+                }
+                pub fn update_group(
+                    &self,
+                    group_id: types::update_group::GroupId,
+                    name: types::update_group::Name,
+                ) -> ::subxt::tx::Payload<types::UpdateGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "update_group",
+                        types::UpdateGroup { group_id, name },
+                        [
+                            247u8, 159u8, 129u8, 15u8, 150u8, 204u8, 24u8, 238u8, 110u8, 15u8,
+                            138u8, 108u8, 0u8, 90u8, 252u8, 174u8, 144u8, 193u8, 219u8, 137u8,
+                            66u8, 202u8, 22u8, 157u8, 17u8, 175u8, 239u8, 98u8, 192u8, 95u8, 139u8,
+                            7u8,
+                        ],
+                    )
+                }
+                pub fn disable_group(
+                    &self,
+                    group_id: types::disable_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::DisableGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "disable_group",
+                        types::DisableGroup { group_id },
+                        [
+                            114u8, 90u8, 105u8, 203u8, 227u8, 204u8, 0u8, 167u8, 214u8, 68u8, 26u8,
+                            223u8, 109u8, 3u8, 217u8, 24u8, 215u8, 28u8, 70u8, 182u8, 240u8, 252u8,
+                            135u8, 230u8, 3u8, 216u8, 178u8, 245u8, 23u8, 33u8, 150u8, 167u8,
+                        ],
+                    )
+                }
+                pub fn assign_role_to_group(
+                    &self,
+                    role_id: types::assign_role_to_group::RoleId,
+                    group_id: types::assign_role_to_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::AssignRoleToGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "assign_role_to_group",
+                        types::AssignRoleToGroup { role_id, group_id },
+                        [
+                            167u8, 255u8, 17u8, 212u8, 199u8, 124u8, 213u8, 172u8, 122u8, 216u8,
+                            116u8, 100u8, 254u8, 214u8, 176u8, 167u8, 245u8, 30u8, 161u8, 240u8,
+                            30u8, 177u8, 1u8, 10u8, 62u8, 101u8, 234u8, 94u8, 168u8, 255u8, 166u8,
+                            164u8,
+                        ],
+                    )
+                }
+                pub fn unassign_role_to_group(
+                    &self,
+                    role_id: types::unassign_role_to_group::RoleId,
+                    group_id: types::unassign_role_to_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::UnassignRoleToGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "unassign_role_to_group",
+                        types::UnassignRoleToGroup { role_id, group_id },
+                        [
+                            242u8, 180u8, 95u8, 80u8, 61u8, 211u8, 34u8, 65u8, 24u8, 176u8, 213u8,
+                            50u8, 171u8, 67u8, 210u8, 62u8, 198u8, 108u8, 10u8, 129u8, 138u8, 77u8,
+                            240u8, 137u8, 130u8, 49u8, 195u8, 174u8, 16u8, 133u8, 96u8, 23u8,
+                        ],
+                    )
+                }
+                pub fn fetch_group_roles(
+                    &self,
+                    owner: types::fetch_group_roles::Owner,
+                    group_id: types::fetch_group_roles::GroupId,
+                ) -> ::subxt::tx::Payload<types::FetchGroupRoles> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_group_roles",
+                        types::FetchGroupRoles { owner, group_id },
+                        [
+                            54u8, 23u8, 120u8, 115u8, 252u8, 14u8, 15u8, 245u8, 239u8, 11u8, 248u8,
+                            218u8, 72u8, 172u8, 79u8, 103u8, 104u8, 195u8, 224u8, 62u8, 52u8, 1u8,
+                            200u8, 190u8, 241u8, 177u8, 105u8, 93u8, 155u8, 162u8, 193u8, 113u8,
+                        ],
+                    )
+                }
+                pub fn assign_user_to_group(
+                    &self,
+                    user_id: types::assign_user_to_group::UserId,
+                    group_id: types::assign_user_to_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::AssignUserToGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "assign_user_to_group",
+                        types::AssignUserToGroup { user_id, group_id },
+                        [
+                            44u8, 35u8, 52u8, 165u8, 168u8, 158u8, 219u8, 107u8, 53u8, 199u8, 86u8,
+                            223u8, 132u8, 176u8, 194u8, 26u8, 224u8, 37u8, 155u8, 87u8, 179u8,
+                            24u8, 166u8, 37u8, 250u8, 254u8, 30u8, 9u8, 210u8, 43u8, 203u8, 193u8,
+                        ],
+                    )
+                }
+                pub fn unassign_user_to_group(
+                    &self,
+                    user_id: types::unassign_user_to_group::UserId,
+                    group_id: types::unassign_user_to_group::GroupId,
+                ) -> ::subxt::tx::Payload<types::UnassignUserToGroup> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "unassign_user_to_group",
+                        types::UnassignUserToGroup { user_id, group_id },
+                        [
+                            232u8, 62u8, 232u8, 61u8, 175u8, 205u8, 34u8, 104u8, 239u8, 70u8, 49u8,
+                            32u8, 22u8, 128u8, 53u8, 232u8, 107u8, 135u8, 198u8, 20u8, 56u8, 207u8,
+                            175u8, 122u8, 171u8, 248u8, 77u8, 15u8, 196u8, 241u8, 163u8, 202u8,
+                        ],
+                    )
+                }
+                pub fn fetch_user_groups(
+                    &self,
+                    owner: types::fetch_user_groups::Owner,
+                    user_id: types::fetch_user_groups::UserId,
+                ) -> ::subxt::tx::Payload<types::FetchUserGroups> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_user_groups",
+                        types::FetchUserGroups { owner, user_id },
+                        [
+                            212u8, 118u8, 152u8, 137u8, 87u8, 212u8, 23u8, 156u8, 107u8, 75u8,
+                            35u8, 86u8, 67u8, 140u8, 2u8, 134u8, 245u8, 162u8, 34u8, 9u8, 46u8,
+                            188u8, 240u8, 235u8, 59u8, 117u8, 244u8, 57u8, 246u8, 141u8, 226u8,
+                            148u8,
+                        ],
+                    )
+                }
+                pub fn fetch_user_permissions(
+                    &self,
+                    owner: types::fetch_user_permissions::Owner,
+                    user_id: types::fetch_user_permissions::UserId,
+                ) -> ::subxt::tx::Payload<types::FetchUserPermissions> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_user_permissions",
+                        types::FetchUserPermissions { owner, user_id },
+                        [
+                            30u8, 119u8, 61u8, 241u8, 56u8, 57u8, 248u8, 127u8, 170u8, 70u8, 157u8,
+                            225u8, 225u8, 157u8, 253u8, 25u8, 177u8, 168u8, 217u8, 253u8, 219u8,
+                            74u8, 229u8, 178u8, 202u8, 13u8, 37u8, 105u8, 215u8, 22u8, 142u8,
+                            208u8,
+                        ],
+                    )
+                }
+                pub fn fetch_group_permissions(
+                    &self,
+                    owner: types::fetch_group_permissions::Owner,
+                    group_id: types::fetch_group_permissions::GroupId,
+                ) -> ::subxt::tx::Payload<types::FetchGroupPermissions> {
+                    ::subxt::tx::Payload::new_static(
+                        "PeaqRbac",
+                        "fetch_group_permissions",
+                        types::FetchGroupPermissions { owner, group_id },
+                        [
+                            188u8, 239u8, 245u8, 104u8, 142u8, 210u8, 222u8, 128u8, 108u8, 8u8,
+                            75u8, 27u8, 255u8, 14u8, 85u8, 135u8, 252u8, 117u8, 23u8, 202u8, 216u8,
+                            216u8, 235u8, 197u8, 12u8, 112u8, 234u8, 92u8, 100u8, 34u8, 32u8,
+                            193u8,
+                        ],
+                    )
+                }
+            }
+        }
+        pub type Event = runtime_types::peaq_pallet_rbac::pallet::Event;
+        pub mod events {
+            use super::runtime_types;
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleAdded(
+                pub role_added::Field0,
+                pub role_added::Field1,
+                pub role_added::Field2,
+            );
+            pub mod role_added {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for RoleAdded {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleAdded";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleUpdated(
+                pub role_updated::Field0,
+                pub role_updated::Field1,
+                pub role_updated::Field2,
+            );
+            pub mod role_updated {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for RoleUpdated {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleUpdated";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleRemoved(pub role_removed::Field0, pub role_removed::Field1);
+            pub mod role_removed {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for RoleRemoved {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleRemoved";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleFetched(pub role_fetched::Field0);
+            pub mod role_fetched {
+                use super::runtime_types;
+                pub type Field0 = runtime_types::peaq_pallet_rbac::structs::Entity<
+                    [::core::primitive::u8; 32usize],
+                >;
+            }
+            impl ::subxt::events::StaticEvent for RoleFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct AllRolesFetched(pub all_roles_fetched::Field0);
+            pub mod all_roles_fetched {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for AllRolesFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "AllRolesFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleAssignedToUser(
+                pub role_assigned_to_user::Field0,
+                pub role_assigned_to_user::Field1,
+                pub role_assigned_to_user::Field2,
+            );
+            pub mod role_assigned_to_user {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for RoleAssignedToUser {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleAssignedToUser";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleUnassignedToUser(
+                pub role_unassigned_to_user::Field0,
+                pub role_unassigned_to_user::Field1,
+                pub role_unassigned_to_user::Field2,
+            );
+            pub mod role_unassigned_to_user {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for RoleUnassignedToUser {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleUnassignedToUser";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleAssignedToGroup(
+                pub role_assigned_to_group::Field0,
+                pub role_assigned_to_group::Field1,
+                pub role_assigned_to_group::Field2,
+            );
+            pub mod role_assigned_to_group {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for RoleAssignedToGroup {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleAssignedToGroup";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct RoleUnassignedToGroup(
+                pub role_unassigned_to_group::Field0,
+                pub role_unassigned_to_group::Field1,
+                pub role_unassigned_to_group::Field2,
+            );
+            pub mod role_unassigned_to_group {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for RoleUnassignedToGroup {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "RoleUnassignedToGroup";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedGroupRoles(pub fetched_group_roles::Field0);
+            pub mod fetched_group_roles {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Role2Group<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedGroupRoles {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedGroupRoles";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedUserRoles(pub fetched_user_roles::Field0);
+            pub mod fetched_user_roles {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Role2User<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedUserRoles {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedUserRoles";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedUserGroups(pub fetched_user_groups::Field0);
+            pub mod fetched_user_groups {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::User2Group<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedUserGroups {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedUserGroups";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedUserPermissions(pub fetched_user_permissions::Field0);
+            pub mod fetched_user_permissions {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedUserPermissions {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedUserPermissions";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedGroupPermissions(pub fetched_group_permissions::Field0);
+            pub mod fetched_group_permissions {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedGroupPermissions {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedGroupPermissions";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionAdded(
+                pub permission_added::Field0,
+                pub permission_added::Field1,
+                pub permission_added::Field2,
+            );
+            pub mod permission_added {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for PermissionAdded {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionAdded";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionUpdated(
+                pub permission_updated::Field0,
+                pub permission_updated::Field1,
+                pub permission_updated::Field2,
+            );
+            pub mod permission_updated {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for PermissionUpdated {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionUpdated";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionDisabled(
+                pub permission_disabled::Field0,
+                pub permission_disabled::Field1,
+            );
+            pub mod permission_disabled {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for PermissionDisabled {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionDisabled";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionAssigned(
+                pub permission_assigned::Field0,
+                pub permission_assigned::Field1,
+                pub permission_assigned::Field2,
+            );
+            pub mod permission_assigned {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for PermissionAssigned {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionAssigned";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionUnassignedToRole(
+                pub permission_unassigned_to_role::Field0,
+                pub permission_unassigned_to_role::Field1,
+                pub permission_unassigned_to_role::Field2,
+            );
+            pub mod permission_unassigned_to_role {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for PermissionUnassignedToRole {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionUnassignedToRole";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct FetchedRolePermissions(pub fetched_role_permissions::Field0);
+            pub mod fetched_role_permissions {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Permission2Role<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for FetchedRolePermissions {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "FetchedRolePermissions";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct PermissionFetched(pub permission_fetched::Field0);
+            pub mod permission_fetched {
+                use super::runtime_types;
+                pub type Field0 = runtime_types::peaq_pallet_rbac::structs::Entity<
+                    [::core::primitive::u8; 32usize],
+                >;
+            }
+            impl ::subxt::events::StaticEvent for PermissionFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "PermissionFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct AllPermissionsFetched(pub all_permissions_fetched::Field0);
+            pub mod all_permissions_fetched {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for AllPermissionsFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "AllPermissionsFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct GroupFetched(pub group_fetched::Field0);
+            pub mod group_fetched {
+                use super::runtime_types;
+                pub type Field0 = runtime_types::peaq_pallet_rbac::structs::Entity<
+                    [::core::primitive::u8; 32usize],
+                >;
+            }
+            impl ::subxt::events::StaticEvent for GroupFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "GroupFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct AllGroupsFetched(pub all_groups_fetched::Field0);
+            pub mod all_groups_fetched {
+                use super::runtime_types;
+                pub type Field0 = ::std::vec::Vec<
+                    runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >,
+                >;
+            }
+            impl ::subxt::events::StaticEvent for AllGroupsFetched {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "AllGroupsFetched";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct GroupAdded(
+                pub group_added::Field0,
+                pub group_added::Field1,
+                pub group_added::Field2,
+            );
+            pub mod group_added {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for GroupAdded {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "GroupAdded";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct GroupUpdated(
+                pub group_updated::Field0,
+                pub group_updated::Field1,
+                pub group_updated::Field2,
+            );
+            pub mod group_updated {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = ::std::vec::Vec<::core::primitive::u8>;
+            }
+            impl ::subxt::events::StaticEvent for GroupUpdated {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "GroupUpdated";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct GroupDisabled(pub group_disabled::Field0, pub group_disabled::Field1);
+            pub mod group_disabled {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for GroupDisabled {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "GroupDisabled";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct UserAssignedToGroup(
+                pub user_assigned_to_group::Field0,
+                pub user_assigned_to_group::Field1,
+                pub user_assigned_to_group::Field2,
+            );
+            pub mod user_assigned_to_group {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for UserAssignedToGroup {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "UserAssignedToGroup";
+            }
+            #[derive(
+                :: subxt :: ext :: codec :: Decode,
+                :: subxt :: ext :: codec :: Encode,
+                :: subxt :: ext :: scale_decode :: DecodeAsType,
+                :: subxt :: ext :: scale_encode :: EncodeAsType,
+                Debug,
+            )]
+            # [codec (crate = :: subxt :: ext :: codec)]
+            #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+            #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+            pub struct UserUnAssignedToGroup(
+                pub user_un_assigned_to_group::Field0,
+                pub user_un_assigned_to_group::Field1,
+                pub user_un_assigned_to_group::Field2,
+            );
+            pub mod user_un_assigned_to_group {
+                use super::runtime_types;
+                pub type Field0 = ::subxt::utils::AccountId32;
+                pub type Field1 = [::core::primitive::u8; 32usize];
+                pub type Field2 = [::core::primitive::u8; 32usize];
+            }
+            impl ::subxt::events::StaticEvent for UserUnAssignedToGroup {
+                const PALLET: &'static str = "PeaqRbac";
+                const EVENT: &'static str = "UserUnAssignedToGroup";
+            }
+        }
+        pub mod storage {
+            use super::runtime_types;
+            pub mod types {
+                use super::runtime_types;
+                pub mod role_store {
+                    use super::runtime_types;
+                    pub type RoleStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = ::subxt::utils::AccountId32;
+                }
+                pub mod role2_user_store {
+                    use super::runtime_types;
+                    pub type Role2UserStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Role2User<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = [::core::primitive::u8; 32usize];
+                }
+                pub mod permission_store {
+                    use super::runtime_types;
+                    pub type PermissionStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = ::subxt::utils::AccountId32;
+                }
+                pub mod permission2_role_store {
+                    use super::runtime_types;
+                    pub type Permission2RoleStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Permission2Role<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = [::core::primitive::u8; 32usize];
+                }
+                pub mod group_store {
+                    use super::runtime_types;
+                    pub type GroupStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = ::subxt::utils::AccountId32;
+                }
+                pub mod role2_group_store {
+                    use super::runtime_types;
+                    pub type Role2GroupStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::Role2Group<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = [::core::primitive::u8; 32usize];
+                }
+                pub mod user2_group_store {
+                    use super::runtime_types;
+                    pub type User2GroupStore = ::std::vec::Vec<
+                        runtime_types::peaq_pallet_rbac::structs::User2Group<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    >;
+                    pub type Param0 = [::core::primitive::u8; 32usize];
+                }
+                pub mod keys_look_up_store {
+                    use super::runtime_types;
+                    pub type KeysLookUpStore = runtime_types::peaq_pallet_rbac::structs::Entity<
+                        [::core::primitive::u8; 32usize],
+                    >;
+                    pub type Param0 = [::core::primitive::u8; 32usize];
+                }
+            }
+            pub struct StorageApi;
+            impl StorageApi {
+                pub fn role_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role_store::RoleStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "RoleStore",
+                        vec![],
+                        [
+                            214u8, 103u8, 180u8, 5u8, 212u8, 149u8, 225u8, 15u8, 192u8, 231u8,
+                            73u8, 219u8, 131u8, 244u8, 78u8, 78u8, 243u8, 66u8, 119u8, 99u8, 52u8,
+                            20u8, 55u8, 250u8, 255u8, 232u8, 38u8, 249u8, 187u8, 72u8, 126u8,
+                            127u8,
+                        ],
+                    )
+                }
+                pub fn role_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::role_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role_store::RoleStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "RoleStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            214u8, 103u8, 180u8, 5u8, 212u8, 149u8, 225u8, 15u8, 192u8, 231u8,
+                            73u8, 219u8, 131u8, 244u8, 78u8, 78u8, 243u8, 66u8, 119u8, 99u8, 52u8,
+                            20u8, 55u8, 250u8, 255u8, 232u8, 38u8, 249u8, 187u8, 72u8, 126u8,
+                            127u8,
+                        ],
+                    )
+                }
+                pub fn role2_user_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role2_user_store::Role2UserStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Role2UserStore",
+                        vec![],
+                        [
+                            176u8, 105u8, 152u8, 118u8, 5u8, 121u8, 238u8, 201u8, 82u8, 115u8,
+                            90u8, 184u8, 198u8, 246u8, 169u8, 144u8, 125u8, 162u8, 25u8, 188u8,
+                            144u8, 14u8, 198u8, 119u8, 89u8, 172u8, 63u8, 119u8, 7u8, 73u8, 231u8,
+                            1u8,
+                        ],
+                    )
+                }
+                pub fn role2_user_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::role2_user_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role2_user_store::Role2UserStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Role2UserStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            176u8, 105u8, 152u8, 118u8, 5u8, 121u8, 238u8, 201u8, 82u8, 115u8,
+                            90u8, 184u8, 198u8, 246u8, 169u8, 144u8, 125u8, 162u8, 25u8, 188u8,
+                            144u8, 14u8, 198u8, 119u8, 89u8, 172u8, 63u8, 119u8, 7u8, 73u8, 231u8,
+                            1u8,
+                        ],
+                    )
+                }
+                pub fn permission_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::permission_store::PermissionStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "PermissionStore",
+                        vec![],
+                        [
+                            12u8, 54u8, 183u8, 22u8, 122u8, 96u8, 89u8, 180u8, 166u8, 101u8, 115u8,
+                            7u8, 240u8, 150u8, 32u8, 153u8, 158u8, 221u8, 224u8, 204u8, 214u8, 1u8,
+                            184u8, 84u8, 11u8, 186u8, 68u8, 188u8, 138u8, 227u8, 207u8, 55u8,
+                        ],
+                    )
+                }
+                pub fn permission_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::permission_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::permission_store::PermissionStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "PermissionStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            12u8, 54u8, 183u8, 22u8, 122u8, 96u8, 89u8, 180u8, 166u8, 101u8, 115u8,
+                            7u8, 240u8, 150u8, 32u8, 153u8, 158u8, 221u8, 224u8, 204u8, 214u8, 1u8,
+                            184u8, 84u8, 11u8, 186u8, 68u8, 188u8, 138u8, 227u8, 207u8, 55u8,
+                        ],
+                    )
+                }
+                pub fn permission2_role_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::permission2_role_store::Permission2RoleStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Permission2RoleStore",
+                        vec![],
+                        [
+                            181u8, 232u8, 98u8, 171u8, 240u8, 127u8, 33u8, 213u8, 222u8, 248u8,
+                            113u8, 201u8, 53u8, 101u8, 22u8, 13u8, 88u8, 91u8, 212u8, 10u8, 17u8,
+                            52u8, 50u8, 252u8, 246u8, 248u8, 147u8, 37u8, 239u8, 135u8, 223u8,
+                            153u8,
+                        ],
+                    )
+                }
+                pub fn permission2_role_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::permission2_role_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::permission2_role_store::Permission2RoleStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Permission2RoleStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            181u8, 232u8, 98u8, 171u8, 240u8, 127u8, 33u8, 213u8, 222u8, 248u8,
+                            113u8, 201u8, 53u8, 101u8, 22u8, 13u8, 88u8, 91u8, 212u8, 10u8, 17u8,
+                            52u8, 50u8, 252u8, 246u8, 248u8, 147u8, 37u8, 239u8, 135u8, 223u8,
+                            153u8,
+                        ],
+                    )
+                }
+                pub fn group_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::group_store::GroupStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "GroupStore",
+                        vec![],
+                        [
+                            16u8, 167u8, 255u8, 114u8, 171u8, 255u8, 36u8, 194u8, 64u8, 5u8, 126u8,
+                            92u8, 85u8, 238u8, 241u8, 234u8, 236u8, 95u8, 45u8, 56u8, 127u8, 121u8,
+                            21u8, 133u8, 207u8, 79u8, 93u8, 163u8, 225u8, 63u8, 245u8, 100u8,
+                        ],
+                    )
+                }
+                pub fn group_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::group_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::group_store::GroupStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "GroupStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            16u8, 167u8, 255u8, 114u8, 171u8, 255u8, 36u8, 194u8, 64u8, 5u8, 126u8,
+                            92u8, 85u8, 238u8, 241u8, 234u8, 236u8, 95u8, 45u8, 56u8, 127u8, 121u8,
+                            21u8, 133u8, 207u8, 79u8, 93u8, 163u8, 225u8, 63u8, 245u8, 100u8,
+                        ],
+                    )
+                }
+                pub fn role2_group_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role2_group_store::Role2GroupStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Role2GroupStore",
+                        vec![],
+                        [
+                            81u8, 128u8, 119u8, 164u8, 154u8, 48u8, 110u8, 108u8, 92u8, 229u8,
+                            195u8, 201u8, 0u8, 57u8, 173u8, 147u8, 157u8, 98u8, 198u8, 100u8,
+                            253u8, 108u8, 222u8, 75u8, 255u8, 38u8, 239u8, 196u8, 89u8, 197u8,
+                            184u8, 3u8,
+                        ],
+                    )
+                }
+                pub fn role2_group_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::role2_group_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::role2_group_store::Role2GroupStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "Role2GroupStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            81u8, 128u8, 119u8, 164u8, 154u8, 48u8, 110u8, 108u8, 92u8, 229u8,
+                            195u8, 201u8, 0u8, 57u8, 173u8, 147u8, 157u8, 98u8, 198u8, 100u8,
+                            253u8, 108u8, 222u8, 75u8, 255u8, 38u8, 239u8, 196u8, 89u8, 197u8,
+                            184u8, 3u8,
+                        ],
+                    )
+                }
+                pub fn user2_group_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::user2_group_store::User2GroupStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "User2GroupStore",
+                        vec![],
+                        [
+                            223u8, 199u8, 19u8, 69u8, 114u8, 109u8, 174u8, 254u8, 108u8, 68u8,
+                            226u8, 191u8, 35u8, 207u8, 46u8, 170u8, 106u8, 32u8, 205u8, 199u8,
+                            47u8, 25u8, 204u8, 241u8, 196u8, 59u8, 56u8, 57u8, 206u8, 133u8, 19u8,
+                            192u8,
+                        ],
+                    )
+                }
+                pub fn user2_group_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::user2_group_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::user2_group_store::User2GroupStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "User2GroupStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            223u8, 199u8, 19u8, 69u8, 114u8, 109u8, 174u8, 254u8, 108u8, 68u8,
+                            226u8, 191u8, 35u8, 207u8, 46u8, 170u8, 106u8, 32u8, 205u8, 199u8,
+                            47u8, 25u8, 204u8, 241u8, 196u8, 59u8, 56u8, 57u8, 206u8, 133u8, 19u8,
+                            192u8,
+                        ],
+                    )
+                }
+                pub fn keys_look_up_store_iter(
+                    &self,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::keys_look_up_store::KeysLookUpStore,
+                    (),
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "KeysLookUpStore",
+                        vec![],
+                        [
+                            66u8, 252u8, 100u8, 63u8, 102u8, 65u8, 155u8, 178u8, 91u8, 212u8,
+                            177u8, 115u8, 69u8, 252u8, 201u8, 125u8, 20u8, 138u8, 245u8, 105u8,
+                            202u8, 25u8, 207u8, 105u8, 228u8, 55u8, 16u8, 118u8, 227u8, 101u8,
+                            99u8, 115u8,
+                        ],
+                    )
+                }
+                pub fn keys_look_up_store(
+                    &self,
+                    _0: impl ::std::borrow::Borrow<types::keys_look_up_store::Param0>,
+                ) -> ::subxt::storage::address::Address<
+                    ::subxt::storage::address::StaticStorageMapKey,
+                    types::keys_look_up_store::KeysLookUpStore,
+                    ::subxt::storage::address::Yes,
+                    ::subxt::storage::address::Yes,
+                    (),
+                > {
+                    ::subxt::storage::address::Address::new_static(
+                        "PeaqRbac",
+                        "KeysLookUpStore",
+                        vec![::subxt::storage::address::make_static_storage_map_key(
+                            _0.borrow(),
+                        )],
+                        [
+                            66u8, 252u8, 100u8, 63u8, 102u8, 65u8, 155u8, 178u8, 91u8, 212u8,
+                            177u8, 115u8, 69u8, 252u8, 201u8, 125u8, 20u8, 138u8, 245u8, 105u8,
+                            202u8, 25u8, 207u8, 105u8, 228u8, 55u8, 16u8, 118u8, 227u8, 101u8,
+                            99u8, 115u8,
+                        ],
+                    )
+                }
+            }
+        }
+    }
     pub mod runtime_types {
         use super::runtime_types;
         pub mod bounded_collections {
@@ -3690,6 +5976,8 @@ pub mod api {
                 Balances(runtime_types::pallet_balances::pallet::Call),
                 #[codec(index = 100)]
                 PeaqDid(runtime_types::peaq_pallet_did::pallet::Call),
+                #[codec(index = 103)]
+                PeaqRbac(runtime_types::peaq_pallet_rbac::pallet::Call),
             }
             #[derive(
                 :: subxt :: ext :: codec :: Decode,
@@ -3708,6 +5996,8 @@ pub mod api {
                 Balances(runtime_types::pallet_balances::pallet::Error),
                 #[codec(index = 100)]
                 PeaqDid(runtime_types::peaq_pallet_did::pallet::Error),
+                #[codec(index = 103)]
+                PeaqRbac(runtime_types::peaq_pallet_rbac::pallet::Error),
             }
             #[derive(
                 :: subxt :: ext :: codec :: Decode,
@@ -3726,6 +6016,8 @@ pub mod api {
                 Balances(runtime_types::pallet_balances::pallet::Event),
                 #[codec(index = 100)]
                 PeaqDid(runtime_types::peaq_pallet_did::pallet::Event),
+                #[codec(index = 103)]
+                PeaqRbac(runtime_types::peaq_pallet_rbac::pallet::Event),
             }
         }
         pub mod peaq_pallet_did {
@@ -3857,6 +6149,452 @@ pub mod api {
                     pub value: ::std::vec::Vec<::core::primitive::u8>,
                     pub validity: _0,
                     pub created: _1,
+                }
+            }
+        }
+        pub mod peaq_pallet_rbac {
+            use super::runtime_types;
+            pub mod pallet {
+                use super::runtime_types;
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub enum Call {
+                    #[codec(index = 0)]
+                    fetch_role {
+                        owner: ::subxt::utils::AccountId32,
+                        entity: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 1)]
+                    fetch_roles { owner: ::subxt::utils::AccountId32 },
+                    #[codec(index = 2)]
+                    add_role {
+                        role_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 3)]
+                    update_role {
+                        role_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 4)]
+                    disable_role {
+                        role_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 5)]
+                    fetch_user_roles {
+                        owner: ::subxt::utils::AccountId32,
+                        user_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 6)]
+                    assign_role_to_user {
+                        role_id: [::core::primitive::u8; 32usize],
+                        user_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 7)]
+                    unassign_role_to_user {
+                        role_id: [::core::primitive::u8; 32usize],
+                        user_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 8)]
+                    fetch_permission {
+                        owner: ::subxt::utils::AccountId32,
+                        permission_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 9)]
+                    fetch_permissions { owner: ::subxt::utils::AccountId32 },
+                    #[codec(index = 10)]
+                    add_permission {
+                        permission_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 11)]
+                    update_permission {
+                        permission_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 12)]
+                    disable_permission {
+                        permission_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 13)]
+                    fetch_role_permissions {
+                        owner: ::subxt::utils::AccountId32,
+                        role_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 14)]
+                    assign_permission_to_role {
+                        permission_id: [::core::primitive::u8; 32usize],
+                        role_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 15)]
+                    unassign_permission_to_role {
+                        permission_id: [::core::primitive::u8; 32usize],
+                        role_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 16)]
+                    fetch_group {
+                        owner: ::subxt::utils::AccountId32,
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 17)]
+                    fetch_groups { owner: ::subxt::utils::AccountId32 },
+                    #[codec(index = 18)]
+                    add_group {
+                        group_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 19)]
+                    update_group {
+                        group_id: [::core::primitive::u8; 32usize],
+                        name: ::std::vec::Vec<::core::primitive::u8>,
+                    },
+                    #[codec(index = 20)]
+                    disable_group {
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 21)]
+                    assign_role_to_group {
+                        role_id: [::core::primitive::u8; 32usize],
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 22)]
+                    unassign_role_to_group {
+                        role_id: [::core::primitive::u8; 32usize],
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 23)]
+                    fetch_group_roles {
+                        owner: ::subxt::utils::AccountId32,
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 24)]
+                    assign_user_to_group {
+                        user_id: [::core::primitive::u8; 32usize],
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 25)]
+                    unassign_user_to_group {
+                        user_id: [::core::primitive::u8; 32usize],
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 26)]
+                    fetch_user_groups {
+                        owner: ::subxt::utils::AccountId32,
+                        user_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 27)]
+                    fetch_user_permissions {
+                        owner: ::subxt::utils::AccountId32,
+                        user_id: [::core::primitive::u8; 32usize],
+                    },
+                    #[codec(index = 28)]
+                    fetch_group_permissions {
+                        owner: ::subxt::utils::AccountId32,
+                        group_id: [::core::primitive::u8; 32usize],
+                    },
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub enum Error {
+                    #[codec(index = 0)]
+                    EntityNameExceedMax64,
+                    #[codec(index = 1)]
+                    EntityAlreadyExist,
+                    #[codec(index = 2)]
+                    EntityDoesNotExist,
+                    #[codec(index = 3)]
+                    EntityDisabled,
+                    #[codec(index = 4)]
+                    EntityAuthorizationFailed,
+                    #[codec(index = 5)]
+                    AssignmentAlreadyExist,
+                    #[codec(index = 6)]
+                    AssignmentDoesNotExist,
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub enum Event {
+                    #[codec(index = 0)]
+                    RoleAdded(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 1)]
+                    RoleUpdated(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 2)]
+                    RoleRemoved(::subxt::utils::AccountId32, [::core::primitive::u8; 32usize]),
+                    #[codec(index = 3)]
+                    RoleFetched(
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    ),
+                    #[codec(index = 4)]
+                    AllRolesFetched(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Entity<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 5)]
+                    RoleAssignedToUser(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 6)]
+                    RoleUnassignedToUser(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 7)]
+                    RoleAssignedToGroup(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 8)]
+                    RoleUnassignedToGroup(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 9)]
+                    FetchedGroupRoles(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Role2Group<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 10)]
+                    FetchedUserRoles(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Role2User<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 11)]
+                    FetchedUserGroups(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::User2Group<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 12)]
+                    FetchedUserPermissions(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Entity<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 13)]
+                    FetchedGroupPermissions(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Entity<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 14)]
+                    PermissionAdded(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 15)]
+                    PermissionUpdated(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 16)]
+                    PermissionDisabled(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 17)]
+                    PermissionAssigned(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 18)]
+                    PermissionUnassignedToRole(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 19)]
+                    FetchedRolePermissions(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Permission2Role<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 20)]
+                    PermissionFetched(
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    ),
+                    #[codec(index = 21)]
+                    AllPermissionsFetched(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Entity<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 22)]
+                    GroupFetched(
+                        runtime_types::peaq_pallet_rbac::structs::Entity<
+                            [::core::primitive::u8; 32usize],
+                        >,
+                    ),
+                    #[codec(index = 23)]
+                    AllGroupsFetched(
+                        ::std::vec::Vec<
+                            runtime_types::peaq_pallet_rbac::structs::Entity<
+                                [::core::primitive::u8; 32usize],
+                            >,
+                        >,
+                    ),
+                    #[codec(index = 24)]
+                    GroupAdded(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 25)]
+                    GroupUpdated(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        ::std::vec::Vec<::core::primitive::u8>,
+                    ),
+                    #[codec(index = 26)]
+                    GroupDisabled(::subxt::utils::AccountId32, [::core::primitive::u8; 32usize]),
+                    #[codec(index = 27)]
+                    UserAssignedToGroup(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                    #[codec(index = 28)]
+                    UserUnAssignedToGroup(
+                        ::subxt::utils::AccountId32,
+                        [::core::primitive::u8; 32usize],
+                        [::core::primitive::u8; 32usize],
+                    ),
+                }
+            }
+            pub mod structs {
+                use super::runtime_types;
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct Entity<_0> {
+                    pub id: _0,
+                    pub name: ::std::vec::Vec<::core::primitive::u8>,
+                    pub enabled: ::core::primitive::bool,
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct Permission2Role<_0> {
+                    pub permission: _0,
+                    pub role: _0,
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct Role2Group<_0> {
+                    pub role: _0,
+                    pub group: _0,
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct Role2User<_0> {
+                    pub role: _0,
+                    pub user: _0,
+                }
+                #[derive(
+                    :: subxt :: ext :: codec :: Decode,
+                    :: subxt :: ext :: codec :: Encode,
+                    :: subxt :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: scale_encode :: EncodeAsType,
+                    Debug,
+                )]
+                # [codec (crate = :: subxt :: ext :: codec)]
+                #[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+                #[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+                pub struct User2Group<_0> {
+                    pub user: _0,
+                    pub group: _0,
                 }
             }
         }

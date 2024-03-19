@@ -180,6 +180,7 @@ impl App {
         );
         let read_result: Option<ReadResult> = self
             .peaq_client
+            .did()
             .read_attribute::<ReadResult, _>(DEVICE_ATTRIBUTE_NAME, Some(filter))
             .await?;
         let sync_state = get_sync_state(read_result, &self.device);
@@ -189,20 +190,20 @@ impl App {
                 if self.device.force {
                     warn!("force sync is enabled; starting to sync it");
                     let value = self.prepare_device()?;
-                    self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                    self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                     info!("successfully updated on-chain device");
                 }
             }
             SyncState::Outdated => {
                 info!("on-chain device is outdated; starting to sync it");
                 let value = self.prepare_device()?;
-                self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                 info!("successfully updated on-chain device");
             }
             SyncState::NotCreated => {
                 info!("on-chain device is not created");
                 let value = self.prepare_device()?;
-                self.peaq_client.add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                self.peaq_client.did().add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                 info!("successfully created on-chain device");
             }
         }
@@ -228,7 +229,7 @@ impl App {
 
     async fn self_remove(&self) -> Result<(), Error> {
         info!("starting to do self-remove");
-        self.peaq_client.remove_attribute(DEVICE_ATTRIBUTE_NAME).await
+        self.peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await
     }
 
     fn prepare_device(&self) -> Result<Vec<u8>, Error> {

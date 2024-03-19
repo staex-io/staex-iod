@@ -1470,6 +1470,719 @@
             }
           },
           {
+            "id": 43,
+            "type": {
+              "def": {
+                "primitive": "bool"
+              }
+            }
+          },
+          {
+            "id": 150,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "structs",
+                "Entity"
+              ],
+              "params": [
+                {
+                  "name": "EntityId",
+                  "type": 1
+                }
+              ],
+              "def": {
+                "composite": {
+                  "fields": [
+                    {
+                      "name": "id",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    },
+                    {
+                      "name": "name",
+                      "type": 13,
+                      "typeName": "Vec<u8>"
+                    },
+                    {
+                      "name": "enabled",
+                      "type": 32,
+                      "typeName": "bool"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 151,
+            "type": {
+              "def": {
+                "sequence": {
+                  "type": 33
+                }
+              }
+            }
+          },
+          {
+            "id": 153,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "structs",
+                "Role2Group"
+              ],
+              "params": [
+                {
+                  "name": "EntityId",
+                  "type": 1
+                }
+              ],
+              "def": {
+                "composite": {
+                  "fields": [
+                    {
+                      "name": "role",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    },
+                    {
+                      "name": "group",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 152,
+            "type": {
+              "def": {
+                "sequence": {
+                  "type": 35
+                }
+              }
+            }
+          },
+          {
+            "id": 155,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "structs",
+                "Role2User"
+              ],
+              "params": [
+                {
+                  "name": "EntityId",
+                  "type": 1
+                }
+              ],
+              "def": {
+                "composite": {
+                  "fields": [
+                    {
+                      "name": "role",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    },
+                    {
+                      "name": "user",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 154,
+            "type": {
+              "def": {
+                "sequence": {
+                  "type": 37
+                }
+              }
+            }
+          },
+          {
+            "id": 157,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "structs",
+                "User2Group"
+              ],
+              "params": [
+                {
+                  "name": "EntityId",
+                  "type": 1
+                }
+              ],
+              "def": {
+                "composite": {
+                  "fields": [
+                    {
+                      "name": "user",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    },
+                    {
+                      "name": "group",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 156,
+            "type": {
+              "def": {
+                "sequence": {
+                  "type": 39
+                }
+              }
+            }
+          },
+          {
+            "id": 159,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "structs",
+                "Permission2Role"
+              ],
+              "params": [
+                {
+                  "name": "EntityId",
+                  "type": 1
+                }
+              ],
+              "def": {
+                "composite": {
+                  "fields": [
+                    {
+                      "name": "permission",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    },
+                    {
+                      "name": "role",
+                      "type": 1,
+                      "typeName": "EntityId"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 158,
+            "type": {
+              "def": {
+                "sequence": {
+                  "type": 41
+                }
+              }
+            }
+          },
+          {
+            "id": 149,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "pallet",
+                "Event"
+              ],
+              "params": [
+                {
+                  "name": "T",
+                  "type": null
+                }
+              ],
+              "def": {
+                "variant": {
+                  "variants": [
+                    {
+                      "name": "RoleAdded",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 0,
+                      "docs": [
+                        "Event emitted when a role has been added. [who, roleId, roleName]"
+                      ]
+                    },
+                    {
+                      "name": "RoleUpdated",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 1,
+                      "docs": [
+                        "Event emitted when a role has been updated. [who, roleId, roleName]"
+                      ]
+                    },
+                    {
+                      "name": "RoleRemoved",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 2,
+                      "docs": [
+                        "Event emitted when a role has been added. [who, roleId]"
+                      ]
+                    },
+                    {
+                      "name": "RoleFetched",
+                      "fields": [
+                        {
+                          "type": 33,
+                          "typeName": "Entity<T::EntityId>"
+                        }
+                      ],
+                      "index": 3
+                    },
+                    {
+                      "name": "AllRolesFetched",
+                      "fields": [
+                        {
+                          "type": 34,
+                          "typeName": "Vec<Entity<T::EntityId>>"
+                        }
+                      ],
+                      "index": 4
+                    },
+                    {
+                      "name": "RoleAssignedToUser",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 5,
+                      "docs": [
+                        "Event emitted when a role has been assigned to user. [who, roleId, userId]"
+                      ]
+                    },
+                    {
+                      "name": "RoleUnassignedToUser",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 6,
+                      "docs": [
+                        "Event emitted when a role has been unassigned to user. [who, roleId, userId]"
+                      ]
+                    },
+                    {
+                      "name": "RoleAssignedToGroup",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 7,
+                      "docs": [
+                        "Event emitted when a role has been assigned to group. [who, roleId, groupId]"
+                      ]
+                    },
+                    {
+                      "name": "RoleUnassignedToGroup",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 8,
+                      "docs": [
+                        "Event emitted when a role has been unassigned from group. [who, roleId, groupId]"
+                      ]
+                    },
+                    {
+                      "name": "FetchedGroupRoles",
+                      "fields": [
+                        {
+                          "type": 36,
+                          "typeName": "Vec<Role2Group<T::EntityId>>"
+                        }
+                      ],
+                      "index": 9
+                    },
+                    {
+                      "name": "FetchedUserRoles",
+                      "fields": [
+                        {
+                          "type": 38,
+                          "typeName": "Vec<Role2User<T::EntityId>>"
+                        }
+                      ],
+                      "index": 10
+                    },
+                    {
+                      "name": "FetchedUserGroups",
+                      "fields": [
+                        {
+                          "type": 40,
+                          "typeName": "Vec<User2Group<T::EntityId>>"
+                        }
+                      ],
+                      "index": 11
+                    },
+                    {
+                      "name": "FetchedUserPermissions",
+                      "fields": [
+                        {
+                          "type": 34,
+                          "typeName": "Vec<Entity<T::EntityId>>"
+                        }
+                      ],
+                      "index": 12
+                    },
+                    {
+                      "name": "FetchedGroupPermissions",
+                      "fields": [
+                        {
+                          "type": 34,
+                          "typeName": "Vec<Entity<T::EntityId>>"
+                        }
+                      ],
+                      "index": 13
+                    },
+                    {
+                      "name": "PermissionAdded",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 14,
+                      "docs": [
+                        "Event emitted when a permission has been added. [who, permissionId, permissionName]"
+                      ]
+                    },
+                    {
+                      "name": "PermissionUpdated",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 15,
+                      "docs": [
+                        "Event emitted when a permission has been updated. [who, permissionId, permissionName]"
+                      ]
+                    },
+                    {
+                      "name": "PermissionDisabled",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 16,
+                      "docs": [
+                        "Event emitted when a permission has been disabled. [who, permissionId]"
+                      ]
+                    },
+                    {
+                      "name": "PermissionAssigned",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 17,
+                      "docs": [
+                        "Event emitted when a permission has been assigned to role. [who, permissionId, roleId]"
+                      ]
+                    },
+                    {
+                      "name": "PermissionUnassignedToRole",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 18,
+                      "docs": [
+                        "Event emitted when a permission has been unassigned to role. [who, permissionId, roleId]"
+                      ]
+                    },
+                    {
+                      "name": "FetchedRolePermissions",
+                      "fields": [
+                        {
+                          "type": 42,
+                          "typeName": "Vec<Permission2Role<T::EntityId>>"
+                        }
+                      ],
+                      "index": 19
+                    },
+                    {
+                      "name": "PermissionFetched",
+                      "fields": [
+                        {
+                          "type": 33,
+                          "typeName": "Entity<T::EntityId>"
+                        }
+                      ],
+                      "index": 20
+                    },
+                    {
+                      "name": "AllPermissionsFetched",
+                      "fields": [
+                        {
+                          "type": 34,
+                          "typeName": "Vec<Entity<T::EntityId>>"
+                        }
+                      ],
+                      "index": 21
+                    },
+                    {
+                      "name": "GroupFetched",
+                      "fields": [
+                        {
+                          "type": 33,
+                          "typeName": "Entity<T::EntityId>"
+                        }
+                      ],
+                      "index": 22
+                    },
+                    {
+                      "name": "AllGroupsFetched",
+                      "fields": [
+                        {
+                          "type": 34,
+                          "typeName": "Vec<Entity<T::EntityId>>"
+                        }
+                      ],
+                      "index": 23
+                    },
+                    {
+                      "name": "GroupAdded",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 24,
+                      "docs": [
+                        "Event emitted when a group has been added. [who, groupId, roleName]"
+                      ]
+                    },
+                    {
+                      "name": "GroupUpdated",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 25,
+                      "docs": [
+                        "Event emitted when a group has been updated. [who, groupId, roleName]"
+                      ]
+                    },
+                    {
+                      "name": "GroupDisabled",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 26,
+                      "docs": [
+                        "Event emitted when a group has been disabled. [who, groupId]"
+                      ]
+                    },
+                    {
+                      "name": "UserAssignedToGroup",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 27,
+                      "docs": [
+                        "Event emitted when a user to group relationship has been added. [who, userId, groupId]"
+                      ]
+                    },
+                    {
+                      "name": "UserUnAssignedToGroup",
+                      "fields": [
+                        {
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 28,
+                      "docs": [
+                        "Event emitted when a user to group relationship has been removed. [who, userId, groupId]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "docs": [
+                "\n\t\t\tThe [event](https://docs.substrate.io/main-docs/build/events-errors/) emitted\n\t\t\tby this pallet.\n\t\t\t"
+              ]
+            }
+          },
+          {
             "id": 20,
             "type": {
               "path": [
@@ -1508,6 +2221,16 @@
                         }
                       ],
                       "index": 100
+                    },
+                    {
+                      "name": "PeaqRbac",
+                      "fields": [
+                        {
+                          "type": 43,
+                          "typeName": "peaq_pallet_rbac::Event<Runtime>"
+                        }
+                      ],
+                      "index": 103
                     }
                   ]
                 }
@@ -1567,7 +2290,7 @@
               "params": [
                 {
                   "name": "E",
-                  "type": 32
+                  "type": 44
                 },
                 {
                   "name": "T",
@@ -1579,17 +2302,17 @@
                   "fields": [
                     {
                       "name": "phase",
-                      "type": 33,
+                      "type": 45,
                       "typeName": "Phase"
                     },
                     {
                       "name": "event",
-                      "type": 32,
+                      "type": 44,
                       "typeName": "E"
                     },
                     {
                       "name": "topics",
-                      "type": 34,
+                      "type": 46,
                       "typeName": "Vec<T>"
                     }
                   ]
@@ -1602,7 +2325,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 35
+                  "type": 47
                 }
               }
             }
@@ -1628,14 +2351,6 @@
             }
           },
           {
-            "id": 43,
-            "type": {
-              "def": {
-                "primitive": "bool"
-              }
-            }
-          },
-          {
             "id": 166,
             "type": {
               "def": {
@@ -1651,7 +2366,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 40
+                  "type": 51
                 }
               }
             }
@@ -1686,12 +2401,12 @@
                   "fields": [
                     {
                       "name": "spec_version",
-                      "type": 42,
+                      "type": 53,
                       "typeName": "codec::Compact<u32>"
                     },
                     {
                       "name": "spec_name",
-                      "type": 43,
+                      "type": 54,
                       "typeName": "sp_runtime::RuntimeString"
                     }
                   ]
@@ -1715,7 +2430,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 45
+                  "type": 56
                 }
               }
             }
@@ -1810,7 +2525,7 @@
                       "fields": [
                         {
                           "name": "items",
-                          "type": 46,
+                          "type": 57,
                           "typeName": "Vec<KeyValue>"
                         }
                       ],
@@ -1824,7 +2539,7 @@
                       "fields": [
                         {
                           "name": "keys",
-                          "type": 47,
+                          "type": 58,
                           "typeName": "Vec<Key>"
                         }
                       ],
@@ -1928,17 +2643,17 @@
                     },
                     {
                       "name": "max_extrinsic",
-                      "type": 49,
+                      "type": 60,
                       "typeName": "Option<Weight>"
                     },
                     {
                       "name": "max_total",
-                      "type": 49,
+                      "type": 60,
                       "typeName": "Option<Weight>"
                     },
                     {
                       "name": "reserved",
-                      "type": 49,
+                      "type": 60,
                       "typeName": "Option<Weight>"
                     }
                   ]
@@ -1957,7 +2672,7 @@
               "params": [
                 {
                   "name": "T",
-                  "type": 50
+                  "type": 61
                 }
               ],
               "def": {
@@ -1965,17 +2680,17 @@
                   "fields": [
                     {
                       "name": "normal",
-                      "type": 50,
+                      "type": 61,
                       "typeName": "T"
                     },
                     {
                       "name": "operational",
-                      "type": 50,
+                      "type": 61,
                       "typeName": "T"
                     },
                     {
                       "name": "mandatory",
-                      "type": 50,
+                      "type": 61,
                       "typeName": "T"
                     }
                   ]
@@ -2006,7 +2721,7 @@
                     },
                     {
                       "name": "per_class",
-                      "type": 51,
+                      "type": 62,
                       "typeName": "PerDispatchClass<WeightsPerClass>"
                     }
                   ]
@@ -2064,7 +2779,7 @@
                   "fields": [
                     {
                       "name": "max",
-                      "type": 53,
+                      "type": 64,
                       "typeName": "PerDispatchClass<u32>"
                     }
                   ]
@@ -2113,7 +2828,7 @@
             "type": {
               "def": {
                 "tuple": [
-                  56,
+                  67,
                   3
                 ]
               }
@@ -2124,7 +2839,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 57
+                  "type": 68
                 }
               }
             }
@@ -2138,14 +2853,14 @@
               "params": [
                 {
                   "name": "T",
-                  "type": 58
+                  "type": 69
                 }
               ],
               "def": {
                 "composite": {
                   "fields": [
                     {
-                      "type": 58
+                      "type": 69
                     }
                   ]
                 }
@@ -2164,12 +2879,12 @@
                   "fields": [
                     {
                       "name": "spec_name",
-                      "type": 43,
+                      "type": 54,
                       "typeName": "RuntimeString"
                     },
                     {
                       "name": "impl_name",
-                      "type": 43,
+                      "type": 54,
                       "typeName": "RuntimeString"
                     },
                     {
@@ -2189,7 +2904,7 @@
                     },
                     {
                       "name": "apis",
-                      "type": 59,
+                      "type": 70,
                       "typeName": "ApisVec"
                     },
                     {
@@ -2333,7 +3048,7 @@
                   "fields": [
                     {
                       "name": "id",
-                      "type": 56,
+                      "type": 67,
                       "typeName": "LockIdentifier"
                     },
                     {
@@ -2343,7 +3058,7 @@
                     },
                     {
                       "name": "reasons",
-                      "type": 63,
+                      "type": 74,
                       "typeName": "Reasons"
                     }
                   ]
@@ -2356,7 +3071,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 64
+                  "type": 75
                 }
               }
             }
@@ -2372,7 +3087,7 @@
               "params": [
                 {
                   "name": "T",
-                  "type": 64
+                  "type": 75
                 },
                 {
                   "name": "S",
@@ -2383,7 +3098,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 65,
+                      "type": 76,
                       "typeName": "Vec<T>"
                     }
                   ]
@@ -2402,7 +3117,7 @@
               "params": [
                 {
                   "name": "ReserveIdentifier",
-                  "type": 56
+                  "type": 67
                 },
                 {
                   "name": "Balance",
@@ -2414,7 +3129,7 @@
                   "fields": [
                     {
                       "name": "id",
-                      "type": 56,
+                      "type": 67,
                       "typeName": "ReserveIdentifier"
                     },
                     {
@@ -2432,7 +3147,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 67
+                  "type": 78
                 }
               }
             }
@@ -2448,7 +3163,7 @@
               "params": [
                 {
                   "name": "T",
-                  "type": 67
+                  "type": 78
                 },
                 {
                   "name": "S",
@@ -2459,7 +3174,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 68,
+                      "type": 79,
                       "typeName": "Vec<T>"
                     }
                   ]
@@ -2478,7 +3193,7 @@
               "params": [
                 {
                   "name": "Id",
-                  "type": 37
+                  "type": 49
                 },
                 {
                   "name": "Balance",
@@ -2490,7 +3205,7 @@
                   "fields": [
                     {
                       "name": "id",
-                      "type": 37,
+                      "type": 49,
                       "typeName": "Id"
                     },
                     {
@@ -2508,7 +3223,7 @@
             "type": {
               "def": {
                 "sequence": {
-                  "type": 70
+                  "type": 81
                 }
               }
             }
@@ -2524,7 +3239,7 @@
               "params": [
                 {
                   "name": "T",
-                  "type": 70
+                  "type": 81
                 },
                 {
                   "name": "S",
@@ -2535,7 +3250,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 71,
+                      "type": 82,
                       "typeName": "Vec<T>"
                     }
                   ]
@@ -2589,7 +3304,7 @@
                       "name": "Index",
                       "fields": [
                         {
-                          "type": 42,
+                          "type": 53,
                           "typeName": "AccountIndex"
                         }
                       ],
@@ -2619,7 +3334,7 @@
                       "name": "Address20",
                       "fields": [
                         {
-                          "type": 73,
+                          "type": 84,
                           "typeName": "[u8; 20]"
                         }
                       ],
@@ -2676,12 +3391,12 @@
                       "fields": [
                         {
                           "name": "dest",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "value",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -2701,17 +3416,17 @@
                       "fields": [
                         {
                           "name": "who",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "new_free",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         },
                         {
                           "name": "old_reserved",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -2730,17 +3445,17 @@
                       "fields": [
                         {
                           "name": "source",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "dest",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "value",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -2755,12 +3470,12 @@
                       "fields": [
                         {
                           "name": "dest",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "value",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -2779,12 +3494,12 @@
                       "fields": [
                         {
                           "name": "dest",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "keep_alive",
-                          "type": 39,
+                          "type": 32,
                           "typeName": "bool"
                         }
                       ],
@@ -2812,7 +3527,7 @@
                       "fields": [
                         {
                           "name": "who",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
@@ -2833,7 +3548,7 @@
                       "fields": [
                         {
                           "name": "who",
-                          "type": 76,
+                          "type": 87,
                           "typeName": "Vec<T::AccountId>"
                         }
                       ],
@@ -2854,12 +3569,12 @@
                       "fields": [
                         {
                           "name": "dest",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "value",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -2875,12 +3590,12 @@
                       "fields": [
                         {
                           "name": "who",
-                          "type": 74,
+                          "type": 85,
                           "typeName": "AccountIdLookupOf<T>"
                         },
                         {
                           "name": "new_free",
-                          "type": 75,
+                          "type": 86,
                           "typeName": "T::Balance"
                         }
                       ],
@@ -3122,6 +3837,510 @@
             }
           },
           {
+            "id": 294,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "pallet",
+                "Call"
+              ],
+              "params": [
+                {
+                  "name": "T",
+                  "type": null
+                }
+              ],
+              "def": {
+                "variant": {
+                  "variants": [
+                    {
+                      "name": "fetch_role",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "entity",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 0
+                    },
+                    {
+                      "name": "fetch_roles",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        }
+                      ],
+                      "index": 1
+                    },
+                    {
+                      "name": "add_role",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 2,
+                      "docs": [
+                        "create role call"
+                      ]
+                    },
+                    {
+                      "name": "update_role",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 3,
+                      "docs": [
+                        "update role call"
+                      ]
+                    },
+                    {
+                      "name": "disable_role",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 4
+                    },
+                    {
+                      "name": "fetch_user_roles",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 5
+                    },
+                    {
+                      "name": "assign_role_to_user",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 6,
+                      "docs": [
+                        "assign a role to user call"
+                      ]
+                    },
+                    {
+                      "name": "unassign_role_to_user",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 7,
+                      "docs": [
+                        "unassign role to user relationship call"
+                      ]
+                    },
+                    {
+                      "name": "fetch_permission",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 8
+                    },
+                    {
+                      "name": "fetch_permissions",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        }
+                      ],
+                      "index": 9
+                    },
+                    {
+                      "name": "add_permission",
+                      "fields": [
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 10,
+                      "docs": [
+                        "create permission call"
+                      ]
+                    },
+                    {
+                      "name": "update_permission",
+                      "fields": [
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 11,
+                      "docs": [
+                        "update permission call"
+                      ]
+                    },
+                    {
+                      "name": "disable_permission",
+                      "fields": [
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 12
+                    },
+                    {
+                      "name": "fetch_role_permissions",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 13
+                    },
+                    {
+                      "name": "assign_permission_to_role",
+                      "fields": [
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 14,
+                      "docs": [
+                        "assign a permission to role call"
+                      ]
+                    },
+                    {
+                      "name": "unassign_permission_to_role",
+                      "fields": [
+                        {
+                          "name": "permission_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 15,
+                      "docs": [
+                        "unassign permission to role relationship call"
+                      ]
+                    },
+                    {
+                      "name": "fetch_group",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 16
+                    },
+                    {
+                      "name": "fetch_groups",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        }
+                      ],
+                      "index": 17
+                    },
+                    {
+                      "name": "add_group",
+                      "fields": [
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 18,
+                      "docs": [
+                        "create group call"
+                      ]
+                    },
+                    {
+                      "name": "update_group",
+                      "fields": [
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "name",
+                          "type": 13,
+                          "typeName": "Vec<u8>"
+                        }
+                      ],
+                      "index": 19,
+                      "docs": [
+                        "update group call"
+                      ]
+                    },
+                    {
+                      "name": "disable_group",
+                      "fields": [
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 20,
+                      "docs": [
+                        "disable group call"
+                      ]
+                    },
+                    {
+                      "name": "assign_role_to_group",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 21,
+                      "docs": [
+                        "assign a role to group call"
+                      ]
+                    },
+                    {
+                      "name": "unassign_role_to_group",
+                      "fields": [
+                        {
+                          "name": "role_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 22,
+                      "docs": [
+                        "unassign role to group relationship call"
+                      ]
+                    },
+                    {
+                      "name": "fetch_group_roles",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 23
+                    },
+                    {
+                      "name": "assign_user_to_group",
+                      "fields": [
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 24,
+                      "docs": [
+                        "assign a user to group call"
+                      ]
+                    },
+                    {
+                      "name": "unassign_user_to_group",
+                      "fields": [
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 25,
+                      "docs": [
+                        "unassign a user to group call"
+                      ]
+                    },
+                    {
+                      "name": "fetch_user_groups",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 26
+                    },
+                    {
+                      "name": "fetch_user_permissions",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "user_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 27
+                    },
+                    {
+                      "name": "fetch_group_permissions",
+                      "fields": [
+                        {
+                          "name": "owner",
+                          "type": 2,
+                          "typeName": "T::AccountId"
+                        },
+                        {
+                          "name": "group_id",
+                          "type": 1,
+                          "typeName": "T::EntityId"
+                        }
+                      ],
+                      "index": 28
+                    }
+                  ]
+                }
+              },
+              "docs": [
+                "Contains one variant per dispatchable that can be called by an extrinsic."
+              ]
+            }
+          },
+          {
             "id": 204,
             "type": {
               "path": [
@@ -3135,7 +4354,7 @@
                       "name": "System",
                       "fields": [
                         {
-                          "type": 48,
+                          "type": 59,
                           "typeName": "self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch\n::CallableCallFor<System, Runtime>"
                         }
                       ],
@@ -3145,7 +4364,7 @@
                       "name": "Balances",
                       "fields": [
                         {
-                          "type": 77,
+                          "type": 88,
                           "typeName": "self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch\n::CallableCallFor<Balances, Runtime>"
                         }
                       ],
@@ -3155,11 +4374,21 @@
                       "name": "PeaqDid",
                       "fields": [
                         {
-                          "type": 79,
+                          "type": 90,
                           "typeName": "self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch\n::CallableCallFor<PeaqDid, Runtime>"
                         }
                       ],
                       "index": 100
+                    },
+                    {
+                      "name": "PeaqRbac",
+                      "fields": [
+                        {
+                          "type": 91,
+                          "typeName": "self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch\n::CallableCallFor<PeaqRbac, Runtime>"
+                        }
+                      ],
+                      "index": 103
                     }
                   ]
                 }
@@ -3239,6 +4468,80 @@
             }
           },
           {
+            "id": 442,
+            "type": {
+              "path": [
+                "peaq_pallet_rbac",
+                "pallet",
+                "Error"
+              ],
+              "params": [
+                {
+                  "name": "T",
+                  "type": null
+                }
+              ],
+              "def": {
+                "variant": {
+                  "variants": [
+                    {
+                      "name": "EntityNameExceedMax64",
+                      "index": 0,
+                      "docs": [
+                        "Name exceeds 64"
+                      ]
+                    },
+                    {
+                      "name": "EntityAlreadyExist",
+                      "index": 1,
+                      "docs": [
+                        "Returned if the Role already exists"
+                      ]
+                    },
+                    {
+                      "name": "EntityDoesNotExist",
+                      "index": 2,
+                      "docs": [
+                        "Returned if the Role does not exists"
+                      ]
+                    },
+                    {
+                      "name": "EntityDisabled",
+                      "index": 3,
+                      "docs": [
+                        "Returned if the Entity is not enabled"
+                      ]
+                    },
+                    {
+                      "name": "EntityAuthorizationFailed",
+                      "index": 4,
+                      "docs": [
+                        "Failed to verify entity ownership"
+                      ]
+                    },
+                    {
+                      "name": "AssignmentAlreadyExist",
+                      "index": 5,
+                      "docs": [
+                        "Failed to assign entity to entity (e.g. user to group, role to user)"
+                      ]
+                    },
+                    {
+                      "name": "AssignmentDoesNotExist",
+                      "index": 6,
+                      "docs": [
+                        "Returned if assignment does not exist"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "docs": [
+                "\n\t\t\tCustom [dispatch errors](https://docs.substrate.io/main-docs/build/events-errors/)\n\t\t\tof this pallet.\n\t\t\t"
+              ]
+            }
+          },
+          {
             "id": 450,
             "type": {
               "def": {
@@ -3261,7 +4564,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 83,
+                      "type": 96,
                       "typeName": "[u8; 64]"
                     }
                   ]
@@ -3281,7 +4584,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 83,
+                      "type": 96,
                       "typeName": "[u8; 64]"
                     }
                   ]
@@ -3312,7 +4615,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 86,
+                      "type": 99,
                       "typeName": "[u8; 65]"
                     }
                   ]
@@ -3334,7 +4637,7 @@
                       "name": "Ed25519",
                       "fields": [
                         {
-                          "type": 84,
+                          "type": 97,
                           "typeName": "ed25519::Signature"
                         }
                       ],
@@ -3344,7 +4647,7 @@
                       "name": "Sr25519",
                       "fields": [
                         {
-                          "type": 85,
+                          "type": 98,
                           "typeName": "sr25519::Signature"
                         }
                       ],
@@ -3354,7 +4657,7 @@
                       "name": "Ecdsa",
                       "fields": [
                         {
-                          "type": 87,
+                          "type": 100,
                           "typeName": "ecdsa::Signature"
                         }
                       ],
@@ -5760,7 +7063,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 92,
+                      "type": 105,
                       "typeName": "Era"
                     }
                   ]
@@ -5787,7 +7090,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 42,
+                      "type": 53,
                       "typeName": "T::Index"
                     }
                   ]
@@ -5832,7 +7135,7 @@
                 "composite": {
                   "fields": [
                     {
-                      "type": 75,
+                      "type": 86,
                       "typeName": "BalanceOf<T>"
                     }
                   ]
@@ -5845,13 +7148,13 @@
             "type": {
               "def": {
                 "tuple": [
-                  89,
-                  90,
-                  91,
-                  93,
-                  94,
-                  95,
-                  96
+                  102,
+                  103,
+                  104,
+                  106,
+                  107,
+                  108,
+                  109
                 ]
               }
             }
@@ -5870,7 +7173,7 @@
                       "name": "System",
                       "fields": [
                         {
-                          "type": 62,
+                          "type": 73,
                           "typeName": "SystemError"
                         }
                       ],
@@ -5880,7 +7183,7 @@
                       "name": "Balances",
                       "fields": [
                         {
-                          "type": 78,
+                          "type": 89,
                           "typeName": "BalancesError"
                         }
                       ],
@@ -5890,11 +7193,21 @@
                       "name": "PeaqDid",
                       "fields": [
                         {
-                          "type": 82,
+                          "type": 94,
                           "typeName": "PeaqDidError"
                         }
                       ],
                       "index": 100
+                    },
+                    {
+                      "name": "PeaqRbac",
+                      "fields": [
+                        {
+                          "type": 95,
+                          "typeName": "PeaqRbacError"
+                        }
+                      ],
+                      "index": 103
                     }
                   ]
                 }
@@ -6197,7 +7510,7 @@
                 "name": "Events",
                 "modifier": "Default",
                 "ty": {
-                  "Plain": 36
+                  "Plain": 48
                 },
                 "default": [
                   0
@@ -6237,7 +7550,7 @@
                       "Blake2_128Concat"
                     ],
                     "key": 12,
-                    "value": 41
+                    "value": 52
                   }
                 },
                 "default": [
@@ -6260,7 +7573,7 @@
                 "name": "LastRuntimeUpgrade",
                 "modifier": "Optional",
                 "ty": {
-                  "Plain": 44
+                  "Plain": 55
                 },
                 "default": [
                   0
@@ -6273,7 +7586,7 @@
                 "name": "UpgradedToU32RefCount",
                 "modifier": "Default",
                 "ty": {
-                  "Plain": 39
+                  "Plain": 32
                 },
                 "default": [
                   0
@@ -6286,7 +7599,7 @@
                 "name": "UpgradedToTripleRefCount",
                 "modifier": "Default",
                 "ty": {
-                  "Plain": 39
+                  "Plain": 32
                 },
                 "default": [
                   0
@@ -6300,7 +7613,7 @@
                 "name": "ExecutionPhase",
                 "modifier": "Optional",
                 "ty": {
-                  "Plain": 33
+                  "Plain": 45
                 },
                 "default": [
                   0
@@ -6312,7 +7625,7 @@
             ]
           },
           "calls": {
-            "ty": 48
+            "ty": 59
           },
           "event": {
             "ty": 26
@@ -6320,7 +7633,7 @@
           "constants": [
             {
               "name": "BlockWeights",
-              "ty": 52,
+              "ty": 63,
               "value": [
                 2,
                 3,
@@ -6420,7 +7733,7 @@
             },
             {
               "name": "BlockLength",
-              "ty": 54,
+              "ty": 65,
               "value": [
                 0,
                 0,
@@ -6454,7 +7767,7 @@
             },
             {
               "name": "DbWeight",
-              "ty": 55,
+              "ty": 66,
               "value": [
                 64,
                 120,
@@ -6479,7 +7792,7 @@
             },
             {
               "name": "Version",
-              "ty": 60,
+              "ty": 71,
               "value": [
                 52,
                 112,
@@ -6762,7 +8075,7 @@
             },
             {
               "name": "SS58Prefix",
-              "ty": 61,
+              "ty": 72,
               "value": [
                 42,
                 0
@@ -6777,7 +8090,7 @@
             }
           ],
           "error": {
-            "ty": 62
+            "ty": 73
           },
           "index": 0,
           "docs": []
@@ -6957,7 +8270,7 @@
                       "Blake2_128Concat"
                     ],
                     "key": 2,
-                    "value": 66
+                    "value": 77
                   }
                 },
                 "default": [
@@ -6977,7 +8290,7 @@
                       "Blake2_128Concat"
                     ],
                     "key": 2,
-                    "value": 69
+                    "value": 80
                   }
                 },
                 "default": [
@@ -6996,7 +8309,7 @@
                       "Blake2_128Concat"
                     ],
                     "key": 2,
-                    "value": 72
+                    "value": 83
                   }
                 },
                 "default": [
@@ -7015,7 +8328,7 @@
                       "Blake2_128Concat"
                     ],
                     "key": 2,
-                    "value": 72
+                    "value": 83
                   }
                 },
                 "default": [
@@ -7028,7 +8341,7 @@
             ]
           },
           "calls": {
-            "ty": 77
+            "ty": 88
           },
           "event": {
             "ty": 28
@@ -7121,7 +8434,7 @@
             }
           ],
           "error": {
-            "ty": 78
+            "ty": 89
           },
           "index": 4,
           "docs": []
@@ -7169,7 +8482,7 @@
                     "hashers": [
                       "Blake2_128Concat"
                     ],
-                    "key": 81,
+                    "key": 93,
                     "value": 2
                   }
                 },
@@ -7181,69 +8494,258 @@
             ]
           },
           "calls": {
-            "ty": 79
+            "ty": 90
           },
           "event": {
             "ty": 31
           },
           "constants": [],
           "error": {
-            "ty": 82
+            "ty": 94
           },
           "index": 100,
+          "docs": []
+        },
+        {
+          "name": "PeaqRbac",
+          "storage": {
+            "prefix": "PeaqRbac",
+            "entries": [
+              {
+                "name": "RoleStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 2,
+                    "value": 34
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "Role2UserStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 1,
+                    "value": 38
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "PermissionStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 2,
+                    "value": 34
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "Permission2RoleStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 1,
+                    "value": 42
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "GroupStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 2,
+                    "value": 34
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "Role2GroupStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 1,
+                    "value": 36
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "User2GroupStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 1,
+                    "value": 40
+                  }
+                },
+                "default": [
+                  0
+                ],
+                "docs": []
+              },
+              {
+                "name": "KeysLookUpStore",
+                "modifier": "Default",
+                "ty": {
+                  "Map": {
+                    "hashers": [
+                      "Blake2_128Concat"
+                    ],
+                    "key": 1,
+                    "value": 33
+                  }
+                },
+                "default": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "docs": []
+              }
+            ]
+          },
+          "calls": {
+            "ty": 91
+          },
+          "event": {
+            "ty": 43
+          },
+          "constants": [],
+          "error": {
+            "ty": 95
+          },
+          "index": 103,
           "docs": []
         }
       ],
       "extrinsic": {
         "version": 4,
-        "address_ty": 74,
-        "call_ty": 80,
-        "signature_ty": 88,
-        "extra_ty": 97,
+        "address_ty": 85,
+        "call_ty": 92,
+        "signature_ty": 101,
+        "extra_ty": 110,
         "signed_extensions": [
           {
             "identifier": "CheckSpecVersion",
-            "ty": 89,
+            "ty": 102,
             "additional_signed": 3
           },
           {
             "identifier": "CheckTxVersion",
-            "ty": 90,
+            "ty": 103,
             "additional_signed": 3
           },
           {
             "identifier": "CheckGenesis",
-            "ty": 91,
+            "ty": 104,
             "additional_signed": 12
           },
           {
             "identifier": "CheckMortality",
-            "ty": 93,
+            "ty": 106,
             "additional_signed": 12
           },
           {
             "identifier": "CheckNonce",
-            "ty": 94,
-            "additional_signed": 37
+            "ty": 107,
+            "additional_signed": 49
           },
           {
             "identifier": "CheckWeight",
-            "ty": 95,
-            "additional_signed": 37
+            "ty": 108,
+            "additional_signed": 49
           },
           {
             "identifier": "ChargeTransactionPayment",
-            "ty": 96,
-            "additional_signed": 37
+            "ty": 109,
+            "additional_signed": 49
           }
         ]
       },
-      "ty": 38,
+      "ty": 50,
       "apis": [],
       "outer_enums": {
-        "call_enum_ty": 80,
-        "event_enum_ty": 32,
-        "error_enum_ty": 98
+        "call_enum_ty": 92,
+        "event_enum_ty": 44,
+        "error_enum_ty": 111
       },
       "custom": {
         "map": {}
