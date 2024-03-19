@@ -1,7 +1,7 @@
 update:
-	subxt metadata --pallets "System,PeaqDid,Balances" --runtime-apis "" -f bytes --url $(url) \
+	subxt metadata --pallets "System,Balances,PeaqDid,PeaqRbac" --runtime-apis "" -f bytes --url $(url) \
 		> assets/peaq.metadata.scale
-	subxt metadata --pallets "System,PeaqDid,Balances" --runtime-apis "" -f json --url $(url) \
+	subxt metadata --pallets "System,Balances,PeaqDid,PeaqRbac" --runtime-apis "" -f json --url $(url) \
 		> assets/peaq.metadata.json
 	subxt codegen --file assets/peaq.metadata.scale \
 		--no-docs | \

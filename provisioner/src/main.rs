@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr};
 use clap::{Parser, Subcommand};
 use config::Faucet;
 use log::{error, info, warn, Level, LevelFilter};
-use peaq_client::peaq_gen::api::peaq_did::events::AttributeRead;
+use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
 use serde::{Deserialize, Serialize};
 use subxt::{
     config::Header,
@@ -13,7 +13,7 @@ use subxt::{
     PolkadotConfig,
 };
 use subxt_signer::{
-    bip39::{self, Mnemonic},
+    bip39::{self},
     sr25519::Keypair,
     SecretUri,
 };
@@ -180,6 +180,7 @@ impl App {
         );
         let read_result: Option<ReadResult> = self
             .peaq_client
+            .did()
             .read_attribute::<ReadResult, _>(DEVICE_ATTRIBUTE_NAME, Some(filter))
             .await?;
         let sync_state = get_sync_state(read_result, &self.device);
@@ -189,20 +190,20 @@ impl App {
                 if self.device.force {
                     warn!("force sync is enabled; starting to sync it");
                     let value = self.prepare_device()?;
-                    self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                    self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                     info!("successfully updated on-chain device");
                 }
             }
             SyncState::Outdated => {
                 info!("on-chain device is outdated; starting to sync it");
                 let value = self.prepare_device()?;
-                self.peaq_client.update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                 info!("successfully updated on-chain device");
             }
             SyncState::NotCreated => {
                 info!("on-chain device is not created");
                 let value = self.prepare_device()?;
-                self.peaq_client.add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
+                self.peaq_client.did().add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
                 info!("successfully created on-chain device");
             }
         }
@@ -219,7 +220,7 @@ impl App {
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance before: {}", balance);
 
-        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone(), &signer).await?;
+        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone()).await?;
 
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance after: {}", balance);
@@ -228,7 +229,7 @@ impl App {
 
     async fn self_remove(&self) -> Result<(), Error> {
         info!("starting to do self-remove");
-        self.peaq_client.remove_attribute(DEVICE_ATTRIBUTE_NAME).await
+        self.peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await
     }
 
     fn prepare_device(&self) -> Result<Vec<u8>, Error> {
@@ -242,14 +243,6 @@ impl App {
         let value = serde_json::to_vec(&device)?;
         Ok(value)
     }
-}
-
-pub(crate) fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
-    let phrase = bip39::Mnemonic::generate(12)?;
-    let keypair = Keypair::from_phrase(&phrase, None)?;
-    let account_id: AccountId32 =
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
-    Ok((phrase, keypair, account_id))
 }
 
 fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {

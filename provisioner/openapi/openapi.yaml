@@ -6,6 +6,8 @@ paths:
   /devices:
     get:
       summary: Query device list or single device
+      tags:
+        - Devices
       operationId: Query
       parameters:
         - in: query

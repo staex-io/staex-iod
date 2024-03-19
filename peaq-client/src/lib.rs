@@ -1,6 +1,10 @@
 use std::ops::Deref;
 
-use peaq_gen::api::peaq_did;
+use peaq_gen::api::{
+    peaq_did,
+    peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
+};
+use rand::RngCore;
 use subxt::{
     backend::{
         legacy::{
@@ -12,14 +16,17 @@ use subxt::{
     blocks::Block,
     config::Header,
     error::{RpcError, TransactionError},
-    events::{EventDetails, Events},
+    events::{EventDetails, Events, StaticEvent},
     ext::{codec::DecodeAll, sp_core::H256},
     rpc_params,
     tx::{Signer, TxInBlock, TxPayload, TxStatus},
     utils::AccountId32,
     OnlineClient, PolkadotConfig,
 };
-use subxt_signer::sr25519::Keypair;
+use subxt_signer::{
+    bip39::{self, Mnemonic},
+    sr25519::Keypair,
+};
 
 pub use peaq_gen;
 
@@ -94,80 +101,20 @@ impl Client {
             .rpc_legacy
             .chain_get_block(None)
             .await?
-            .ok_or(subxt::Error::Other("last block is not found".into()))?;
+            .ok_or_else(|| subxt::Error::Other("last block is not found".into()))?;
         Ok(block)
     }
-}
 
-pub struct SignerClient {
-    client: Client,
-    keypair: Keypair,
-    peaq_did_api: peaq_did::calls::TransactionApi,
-}
-
-impl SignerClient {
-    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
-        let client = Client::new(rpc_url).await?;
-        Ok(Self {
-            client,
-            keypair,
-            peaq_did_api: peaq_did::calls::TransactionApi {},
-        })
-    }
-
-    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
-        let call =
-            self.peaq_did_api.add_attribute(self.address(), name.as_bytes().to_vec(), value, None);
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
-    }
-
-    pub async fn read_attribute<T, F>(
-        &self,
-        name: &str,
-        filter: Option<F>,
-    ) -> Result<Option<T>, Error>
-    where
-        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
-    {
-        let call = self.peaq_did_api.read_attribute(self.address(), name.as_bytes().to_vec());
-        let tx = self.submit_tx(&call, &self.keypair).await?;
-        match self.process_events(tx, filter).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
-                    // e.as_root_error() doesn't work, so we get second byte
-                    // because it contains error index.
-                    let a = e.bytes()[1..2].to_vec();
-                    // And decode error manually.
-                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
-                    if let peaq_did::Error::AttributeNotFound = did_err {
-                        Ok(None)
-                    } else {
-                        Err(e.into())
-                    }
-                } else {
-                    Err(e.into())
-                }
-            }
-        }
-    }
-
-    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
-        let call = self.peaq_did_api.update_attribute(
-            self.address(),
-            name.as_bytes().to_vec(),
-            value,
-            None,
-        );
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
-    }
-
-    pub async fn remove_attribute(&self, name: &str) -> Result<(), Error> {
-        let call = self.peaq_did_api.remove_attribute(self.address(), name.as_bytes().to_vec());
-        self.submit_tx(&call, &self.keypair).await?;
-        Ok(())
+    pub async fn get_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
+        let last_block = self.get_last_block().await?;
+        let account_nonce = self
+            .api
+            .blocks()
+            .at(last_block.block.header.hash())
+            .await?
+            .account_nonce(account_id)
+            .await?;
+        Ok(account_nonce)
     }
 
     pub async fn transfer<S>(
@@ -186,7 +133,7 @@ impl SignerClient {
         Ok(())
     }
 
-    async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(
+    pub async fn submit_tx<Call: TxPayload, S: Signer<PolkadotConfig>>(
         &self,
         call: &Call,
         signer: &S,
@@ -194,7 +141,6 @@ impl SignerClient {
         let account_id = signer.account_id();
         let account_nonce = self.get_nonce(&account_id).await?;
         let mut tx = self
-            .client
             .api
             .tx()
             .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
@@ -218,19 +164,6 @@ impl SignerClient {
         Err(RpcError::SubscriptionDropped.into())
     }
 
-    async fn get_nonce(&self, account_id: &AccountId32) -> Result<u64, Error> {
-        let last_block = self.client.get_last_block().await?;
-        let account_nonce = self
-            .client
-            .api
-            .blocks()
-            .at(last_block.block.header.hash())
-            .await?
-            .account_nonce(account_id)
-            .await?;
-        Ok(account_nonce)
-    }
-
     async fn process_events<T, F>(
         &self,
         tx: TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>,
@@ -252,6 +185,45 @@ impl SignerClient {
         }
         Ok(None)
     }
+}
+
+pub struct SignerClient {
+    client: Client,
+    keypair: Keypair,
+}
+
+impl SignerClient {
+    pub async fn new(rpc_url: &str, keypair: Keypair) -> Result<Self, Error> {
+        let client = Client::new(rpc_url).await?;
+        Ok(Self { client, keypair })
+    }
+
+    pub async fn transfer(&self, amount: u128, address: AccountId32) -> Result<(), Error> {
+        self.client.transfer(amount, address, &self.keypair).await
+    }
+
+    pub async fn submit_tx<Call: TxPayload>(
+        &self,
+        call: &Call,
+    ) -> Result<TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>, Error> {
+        self.client.submit_tx(call, &self.keypair).await
+    }
+
+    pub fn did(&self) -> DID {
+        DID {
+            client: &self.client,
+            signer_client: self,
+            peaq_did_api: peaq_did::calls::TransactionApi {},
+        }
+    }
+
+    pub fn rbac(&self) -> RBAC {
+        RBAC {
+            client: &self.client,
+            signer_client: self,
+            peaq_rbac_api: peaq_rbac::calls::TransactionApi {},
+        }
+    }
 
     fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
@@ -265,9 +237,186 @@ impl Deref for SignerClient {
     }
 }
 
+/// RBAC structure contains methods to interact with PEAQ DID pallet.
+pub struct DID<'a> {
+    client: &'a Client,
+    signer_client: &'a SignerClient,
+    peaq_did_api: peaq_did::calls::TransactionApi,
+}
+
+impl<'a> DID<'a> {
+    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+        let call = self.peaq_did_api.add_attribute(
+            self.signer_client.address(),
+            name.as_bytes().to_vec(),
+            value,
+            None,
+        );
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
+    pub async fn read_attribute<T, F>(
+        &self,
+        name: &str,
+        filter: Option<F>,
+    ) -> Result<Option<T>, Error>
+    where
+        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
+    {
+        let call = self
+            .peaq_did_api
+            .read_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        let tx = self.signer_client.submit_tx(&call).await?;
+        match self.client.process_events(tx, filter).await {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
+                    // e.as_root_error() doesn't work, so we get second byte
+                    // because it contains error index.
+                    let a = e.bytes()[1..2].to_vec();
+                    // And decode error manually.
+                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
+                    if let peaq_did::Error::AttributeNotFound = did_err {
+                        Ok(None)
+                    } else {
+                        Err(e.into())
+                    }
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
+    }
+
+    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+        let call = self.peaq_did_api.update_attribute(
+            self.signer_client.address(),
+            name.as_bytes().to_vec(),
+            value,
+            None,
+        );
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
+    pub async fn remove_attribute(&self, name: &str) -> Result<(), Error> {
+        let call = self
+            .peaq_did_api
+            .remove_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+}
+
+pub const ENTITY_ID_LENGTH: usize = 32;
+
+pub type RBACRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
+
+/// RBAC structure contains methods to interact with PEAQ RBAC pallet.
+#[allow(clippy::upper_case_acronyms)]
+pub struct RBAC<'a> {
+    client: &'a Client,
+    signer_client: &'a SignerClient,
+    peaq_rbac_api: peaq_rbac::calls::TransactionApi,
+}
+
+impl<'a> RBAC<'a> {
+    pub async fn add_role(&self, name: String) -> Result<Entity, Error> {
+        let mut role_id = [0u8; ENTITY_ID_LENGTH];
+        rand::thread_rng().fill_bytes(&mut role_id);
+        let call = self.peaq_rbac_api.add_role(role_id, name.into_bytes());
+        self.signer_client.submit_tx(&call).await?;
+        Ok(role_id)
+    }
+
+    pub async fn add_group(&self, name: String) -> Result<Entity, Error> {
+        let mut group_id = [0u8; ENTITY_ID_LENGTH];
+        rand::thread_rng().fill_bytes(&mut group_id);
+        let call = self.peaq_rbac_api.add_group(group_id, name.into_bytes());
+        self.signer_client.submit_tx(&call).await?;
+        Ok(group_id)
+    }
+
+    pub async fn add_permission(&self, name: String) -> Result<Entity, Error> {
+        let mut permission_id = [0u8; ENTITY_ID_LENGTH];
+        rand::thread_rng().fill_bytes(&mut permission_id);
+        let call = self.peaq_rbac_api.add_permission(permission_id, name.into_bytes());
+        self.signer_client.submit_tx(&call).await?;
+        Ok(permission_id)
+    }
+
+    pub async fn assign_permission_to_role(
+        &self,
+        permission_id: Entity,
+        role_id: Entity,
+    ) -> Result<(), Error> {
+        let call = self.peaq_rbac_api.assign_permission_to_role(permission_id, role_id);
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
+    pub async fn assign_role_to_group(
+        &self,
+        role_id: Entity,
+        group_id: Entity,
+    ) -> Result<(), Error> {
+        let call = self.peaq_rbac_api.assign_role_to_group(role_id, group_id);
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
+    pub async fn assign_user_to_group(
+        &self,
+        user_id: Entity,
+        group_id: Entity,
+    ) -> Result<(), Error> {
+        let call = self.peaq_rbac_api.assign_user_to_group(user_id, group_id);
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
+    pub async fn fetch_user_permissions(
+        &self,
+        owner: AccountId32,
+        user_id: Entity,
+    ) -> Result<Vec<RBACRecord>, Error> {
+        let call = self.peaq_rbac_api.fetch_user_permissions(owner, user_id);
+        let tx = self.signer_client.submit_tx(&call).await?;
+        let entities = self
+            .client
+            .process_events(tx, Some(filter_fetched_user_permissions))
+            .await?
+            .ok_or_else(|| "failed to find permission entities for user".to_string())?;
+        Ok(entities)
+    }
+}
+
+pub fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
+    let phrase = bip39::Mnemonic::generate(12)?;
+    let keypair = Keypair::from_phrase(&phrase, None)?;
+    let account_id: AccountId32 =
+        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+    Ok((phrase, keypair, account_id))
+}
+
+fn filter_fetched_user_permissions(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
+    if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
+        if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
+            return Some(evt.0);
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::Client;
+    use std::str::{from_utf8, FromStr};
+
+    use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
+    use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
+
+    use crate::{Client, SignerClient};
 
     #[tokio::test]
     async fn get_token_information() {
@@ -278,5 +427,69 @@ mod tests {
         let token_symbol: String = system_properties.get("tokenSymbol").unwrap().to_string();
         assert_eq!(18, token_decimals);
         assert_eq!("\"AGUNG\"", token_symbol);
+    }
+
+    #[ignore = "requires mnemonic phrase"]
+    #[tokio::test]
+    async fn test_rbac() {
+        let keypair = Keypair::from_phrase(
+            &Mnemonic::from_str(
+                "weather asthma become jealous hurry option canal boring hedgehog rule heavy spawn",
+            )
+            .unwrap(),
+            None,
+        )
+        .unwrap();
+        let owner: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+
+        let user_id = [
+            122, 190, 82, 250, 244, 222, 128, 103, 71, 215, 50, 122, 3, 178, 251, 167, 35, 47, 138,
+            5, 239, 66, 202, 72, 78, 51, 242, 157, 60, 181, 104, 107,
+        ];
+
+        let client =
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+        let rbac = client.rbac();
+
+        // let permission_name = String::from("mqtt_access");
+        // let role_name = String::from("accessor");
+        // let group_name = String::from("subscribers");
+
+        // eprintln!("adding permission");
+        // let permission_id = rbac.add_permission(permission_name).await.unwrap();
+        // let permission_id = [
+        //     127, 94, 254, 32, 45, 69, 35, 251, 49, 109, 247, 200, 33, 18, 22, 77, 102, 15, 192, 71,
+        //     96, 209, 246, 196, 164, 103, 14, 62, 146, 209, 102, 10,
+        // ];
+        // eprintln!("adding role");
+        // let role_id = rbac.add_role(role_name).await.unwrap();
+        // let role_id = [
+        //     247, 219, 4, 253, 203, 102, 224, 92, 61, 32, 29, 208, 112, 112, 242, 221, 18, 65, 165,
+        //     178, 157, 1, 108, 113, 47, 116, 38, 103, 76, 221, 66, 18,
+        // ];
+        // eprintln!("adding group");
+        // let group_id = rbac.add_group(group_name).await.unwrap();
+        // let group_id = [
+        //     206, 52, 97, 3, 203, 226, 87, 176, 148, 143, 97, 150, 124, 187, 229, 241, 161, 58, 59,
+        //     34, 239, 108, 88, 46, 210, 79, 197, 243, 0, 194, 249, 171,
+        // ];
+
+        // eprintln!("{:?}", permission_id);
+        // eprintln!("{:?}", role_id);
+        // eprintln!("{:?}", group_id);
+
+        // eprintln!("assigning permission to role");
+        // rbac.assign_permission_to_role(permission_id, role_id).await.unwrap();
+        // eprintln!("assigning role to group");
+        // rbac.assign_role_to_group(role_id, group_id).await.unwrap();
+        // eprintln!("assigning user to group");
+        // rbac.assign_user_to_group(user_id, group_id).await.unwrap();
+
+        eprintln!("fetching user permissions");
+        let records = rbac.fetch_user_permissions(owner, user_id).await.unwrap();
+        assert_eq!(records.len(), 1);
+        assert!(records[0].enabled);
+        assert_eq!(from_utf8(&records[0].name).unwrap(), "mqtt_access");
     }
 }
