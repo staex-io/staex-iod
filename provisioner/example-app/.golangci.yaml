@@ -1,0 +1,86 @@
+run:
+  timeout: 10m
+  allow-parallel-runners: true
+  tests: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+      - experimental
+    disabled-checks:
+      - whyNoLint
+      - hugeParam
+      - unnecessaryBlock
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - composites
+  lll:
+    line-length: 120
+  whitespace:
+    multi-if: true
+    multi-func: true
+  nolintlint:
+    require-explanation: true
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  revive:
+    rules:
+      - name: var-naming
+        disabled: true
+  stylecheck:
+    checks: ["all", "-ST1003"]
+
+issues:
+  exclude:
+    - "G101"
+    - "G404"
+  exclude-rules:
+    - path: (.+)_test.go
+      linters:
+        - goerr113
+
+linters:
+  enable:
+    - goconst
+    - errcheck
+    - megacheck
+    - govet
+    - unconvert
+    - gosec
+    - gofmt
+    - goimports
+    - gocyclo
+    - dupl
+    - misspell
+    - lll
+    - unused
+    - whitespace
+    - nolintlint
+    - godox
+    - typecheck
+    - ineffassign
+    - stylecheck
+    - gochecknoinits
+    - gochecknoglobals
+    - exportloopref
+    - staticcheck
+    - gocritic
+    - nakedret
+    - gosimple
+    - prealloc
+    - revive
+    - goerr113
+    - unparam
+  disable-all: true
+  fast: false
