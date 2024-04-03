@@ -4,6 +4,6 @@ default-members = ["provisioner", "peaq-gen", "peaq-client"]
 resolver = "2"
 
 [workspace.dependencies]
-subxt = { version = "0.34.0", features = ["substrate-compat"], default-features = true }
-subxt-signer = { version = "0.34.0", features = [], default-features = true }
-tokio = { version = "1.36.0", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
+subxt = { version = "0.35.0", features = ["substrate-compat"], default-features = true }
+subxt-signer = { version = "0.35.0", features = [], default-features = true }
+tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "signal"], default-features = false }

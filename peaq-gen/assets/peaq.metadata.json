@@ -5,7 +5,7 @@
       "types": {
         "types": [
           {
-            "id": 2,
+            "id": 0,
             "type": {
               "def": {
                 "primitive": "u8"
@@ -24,7 +24,7 @@
             }
           },
           {
-            "id": 0,
+            "id": 2,
             "type": {
               "path": [
                 "sp_core",
@@ -44,7 +44,7 @@
             }
           },
           {
-            "id": 4,
+            "id": 3,
             "type": {
               "def": {
                 "primitive": "u32"
@@ -52,7 +52,7 @@
             }
           },
           {
-            "id": 6,
+            "id": 4,
             "type": {
               "def": {
                 "primitive": "u128"
@@ -60,7 +60,7 @@
             }
           },
           {
-            "id": 7,
+            "id": 5,
             "type": {
               "path": [
                 "pallet_balances",
@@ -80,7 +80,7 @@
             }
           },
           {
-            "id": 5,
+            "id": 6,
             "type": {
               "path": [
                 "pallet_balances",
@@ -122,7 +122,7 @@
             }
           },
           {
-            "id": 3,
+            "id": 7,
             "type": {
               "path": [
                 "frame_system",
@@ -172,7 +172,7 @@
             }
           },
           {
-            "id": 11,
+            "id": 8,
             "type": {
               "def": {
                 "primitive": "u64"
@@ -180,7 +180,7 @@
             }
           },
           {
-            "id": 10,
+            "id": 9,
             "type": {
               "def": {
                 "compact": {
@@ -190,7 +190,7 @@
             }
           },
           {
-            "id": 9,
+            "id": 10,
             "type": {
               "path": [
                 "sp_weights",
@@ -216,7 +216,7 @@
             }
           },
           {
-            "id": 8,
+            "id": 11,
             "type": {
               "path": [
                 "frame_support",
@@ -282,7 +282,7 @@
             }
           },
           {
-            "id": 17,
+            "id": 14,
             "type": {
               "def": {
                 "array": {
@@ -293,7 +293,7 @@
             }
           },
           {
-            "id": 16,
+            "id": 15,
             "type": {
               "path": [
                 "sp_runtime",
@@ -366,7 +366,7 @@
             }
           },
           {
-            "id": 15,
+            "id": 16,
             "type": {
               "def": {
                 "sequence": {
@@ -376,7 +376,7 @@
             }
           },
           {
-            "id": 14,
+            "id": 17,
             "type": {
               "path": [
                 "sp_runtime",
@@ -398,7 +398,7 @@
             }
           },
           {
-            "id": 23,
+            "id": 18,
             "type": {
               "path": [
                 "frame_support",
@@ -426,7 +426,7 @@
             }
           },
           {
-            "id": 24,
+            "id": 19,
             "type": {
               "path": [
                 "frame_support",
@@ -450,7 +450,7 @@
             }
           },
           {
-            "id": 22,
+            "id": 20,
             "type": {
               "path": [
                 "frame_support",
@@ -481,7 +481,7 @@
             }
           },
           {
-            "id": 26,
+            "id": 21,
             "type": {
               "path": [
                 "sp_runtime",
@@ -506,7 +506,7 @@
             }
           },
           {
-            "id": 27,
+            "id": 22,
             "type": {
               "path": [
                 "sp_runtime",
@@ -561,7 +561,7 @@
             }
           },
           {
-            "id": 28,
+            "id": 23,
             "type": {
               "path": [
                 "sp_arithmetic",
@@ -588,7 +588,7 @@
             }
           },
           {
-            "id": 29,
+            "id": 24,
             "type": {
               "path": [
                 "sp_runtime",
@@ -706,7 +706,7 @@
             }
           },
           {
-            "id": 21,
+            "id": 26,
             "type": {
               "path": [
                 "frame_system",
@@ -818,7 +818,7 @@
             }
           },
           {
-            "id": 31,
+            "id": 27,
             "type": {
               "path": [
                 "frame_support",
@@ -844,7 +844,7 @@
             }
           },
           {
-            "id": 30,
+            "id": 28,
             "type": {
               "path": [
                 "pallet_balances",
@@ -1274,7 +1274,7 @@
             }
           },
           {
-            "id": 142,
+            "id": 29,
             "type": {
               "path": [
                 "Option"
@@ -1307,7 +1307,7 @@
             }
           },
           {
-            "id": 143,
+            "id": 30,
             "type": {
               "path": [
                 "peaq_pallet_did",
@@ -1353,7 +1353,7 @@
             }
           },
           {
-            "id": 141,
+            "id": 31,
             "type": {
               "path": [
                 "peaq_pallet_did",
@@ -1470,7 +1470,7 @@
             }
           },
           {
-            "id": 43,
+            "id": 32,
             "type": {
               "def": {
                 "primitive": "bool"
@@ -1478,7 +1478,7 @@
             }
           },
           {
-            "id": 150,
+            "id": 33,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -1515,7 +1515,7 @@
             }
           },
           {
-            "id": 151,
+            "id": 34,
             "type": {
               "def": {
                 "sequence": {
@@ -1525,7 +1525,7 @@
             }
           },
           {
-            "id": 153,
+            "id": 35,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -1557,7 +1557,7 @@
             }
           },
           {
-            "id": 152,
+            "id": 36,
             "type": {
               "def": {
                 "sequence": {
@@ -1567,7 +1567,7 @@
             }
           },
           {
-            "id": 155,
+            "id": 37,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -1599,7 +1599,7 @@
             }
           },
           {
-            "id": 154,
+            "id": 38,
             "type": {
               "def": {
                 "sequence": {
@@ -1609,7 +1609,7 @@
             }
           },
           {
-            "id": 157,
+            "id": 39,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -1641,7 +1641,7 @@
             }
           },
           {
-            "id": 156,
+            "id": 40,
             "type": {
               "def": {
                 "sequence": {
@@ -1651,7 +1651,7 @@
             }
           },
           {
-            "id": 159,
+            "id": 41,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -1683,7 +1683,7 @@
             }
           },
           {
-            "id": 158,
+            "id": 42,
             "type": {
               "def": {
                 "sequence": {
@@ -1693,7 +1693,7 @@
             }
           },
           {
-            "id": 149,
+            "id": 43,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -2183,7 +2183,7 @@
             }
           },
           {
-            "id": 20,
+            "id": 44,
             "type": {
               "path": [
                 "peaq_dev_runtime",
@@ -2238,7 +2238,7 @@
             }
           },
           {
-            "id": 164,
+            "id": 45,
             "type": {
               "path": [
                 "frame_system",
@@ -2271,7 +2271,7 @@
             }
           },
           {
-            "id": 57,
+            "id": 46,
             "type": {
               "def": {
                 "sequence": {
@@ -2281,7 +2281,7 @@
             }
           },
           {
-            "id": 19,
+            "id": 47,
             "type": {
               "path": [
                 "frame_system",
@@ -2321,7 +2321,7 @@
             }
           },
           {
-            "id": 18,
+            "id": 48,
             "type": {
               "def": {
                 "sequence": {
@@ -2331,7 +2331,7 @@
             }
           },
           {
-            "id": 35,
+            "id": 49,
             "type": {
               "def": {
                 "tuple": []
@@ -2339,7 +2339,7 @@
             }
           },
           {
-            "id": 39,
+            "id": 50,
             "type": {
               "path": [
                 "peaq_dev_runtime",
@@ -2351,7 +2351,7 @@
             }
           },
           {
-            "id": 166,
+            "id": 51,
             "type": {
               "def": {
                 "tuple": [
@@ -2362,7 +2362,7 @@
             }
           },
           {
-            "id": 165,
+            "id": 52,
             "type": {
               "def": {
                 "sequence": {
@@ -2372,7 +2372,7 @@
             }
           },
           {
-            "id": 79,
+            "id": 53,
             "type": {
               "def": {
                 "compact": {
@@ -2382,7 +2382,7 @@
             }
           },
           {
-            "id": 52,
+            "id": 54,
             "type": {
               "def": {
                 "primitive": "str"
@@ -2390,7 +2390,7 @@
             }
           },
           {
-            "id": 167,
+            "id": 55,
             "type": {
               "path": [
                 "frame_system",
@@ -2415,7 +2415,7 @@
             }
           },
           {
-            "id": 170,
+            "id": 56,
             "type": {
               "def": {
                 "tuple": [
@@ -2426,7 +2426,7 @@
             }
           },
           {
-            "id": 169,
+            "id": 57,
             "type": {
               "def": {
                 "sequence": {
@@ -2436,7 +2436,7 @@
             }
           },
           {
-            "id": 171,
+            "id": 58,
             "type": {
               "def": {
                 "sequence": {
@@ -2446,7 +2446,7 @@
             }
           },
           {
-            "id": 168,
+            "id": 59,
             "type": {
               "path": [
                 "frame_system",
@@ -2593,7 +2593,7 @@
             }
           },
           {
-            "id": 175,
+            "id": 60,
             "type": {
               "path": [
                 "Option"
@@ -2626,7 +2626,7 @@
             }
           },
           {
-            "id": 174,
+            "id": 61,
             "type": {
               "path": [
                 "frame_system",
@@ -2662,7 +2662,7 @@
             }
           },
           {
-            "id": 173,
+            "id": 62,
             "type": {
               "path": [
                 "frame_support",
@@ -2699,7 +2699,7 @@
             }
           },
           {
-            "id": 172,
+            "id": 63,
             "type": {
               "path": [
                 "frame_system",
@@ -2730,7 +2730,7 @@
             }
           },
           {
-            "id": 177,
+            "id": 64,
             "type": {
               "path": [
                 "frame_support",
@@ -2767,7 +2767,7 @@
             }
           },
           {
-            "id": 176,
+            "id": 65,
             "type": {
               "path": [
                 "frame_system",
@@ -2788,7 +2788,7 @@
             }
           },
           {
-            "id": 178,
+            "id": 66,
             "type": {
               "path": [
                 "sp_weights",
@@ -2813,7 +2813,7 @@
             }
           },
           {
-            "id": 94,
+            "id": 67,
             "type": {
               "def": {
                 "array": {
@@ -2824,7 +2824,7 @@
             }
           },
           {
-            "id": 182,
+            "id": 68,
             "type": {
               "def": {
                 "tuple": [
@@ -2835,7 +2835,7 @@
             }
           },
           {
-            "id": 181,
+            "id": 69,
             "type": {
               "def": {
                 "sequence": {
@@ -2845,7 +2845,7 @@
             }
           },
           {
-            "id": 180,
+            "id": 70,
             "type": {
               "path": [
                 "Cow"
@@ -2868,7 +2868,7 @@
             }
           },
           {
-            "id": 179,
+            "id": 71,
             "type": {
               "path": [
                 "sp_version",
@@ -2923,7 +2923,7 @@
             }
           },
           {
-            "id": 183,
+            "id": 72,
             "type": {
               "def": {
                 "primitive": "u16"
@@ -2931,7 +2931,7 @@
             }
           },
           {
-            "id": 184,
+            "id": 73,
             "type": {
               "path": [
                 "frame_system",
@@ -3002,7 +3002,7 @@
             }
           },
           {
-            "id": 189,
+            "id": 74,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3030,7 +3030,7 @@
             }
           },
           {
-            "id": 188,
+            "id": 75,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3067,7 +3067,7 @@
             }
           },
           {
-            "id": 190,
+            "id": 76,
             "type": {
               "def": {
                 "sequence": {
@@ -3077,7 +3077,7 @@
             }
           },
           {
-            "id": 187,
+            "id": 77,
             "type": {
               "path": [
                 "bounded_collections",
@@ -3107,7 +3107,7 @@
             }
           },
           {
-            "id": 192,
+            "id": 78,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3143,7 +3143,7 @@
             }
           },
           {
-            "id": 193,
+            "id": 79,
             "type": {
               "def": {
                 "sequence": {
@@ -3153,7 +3153,7 @@
             }
           },
           {
-            "id": 191,
+            "id": 80,
             "type": {
               "path": [
                 "bounded_collections",
@@ -3183,7 +3183,7 @@
             }
           },
           {
-            "id": 195,
+            "id": 81,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3219,7 +3219,7 @@
             }
           },
           {
-            "id": 196,
+            "id": 82,
             "type": {
               "def": {
                 "sequence": {
@@ -3229,7 +3229,7 @@
             }
           },
           {
-            "id": 194,
+            "id": 83,
             "type": {
               "path": [
                 "bounded_collections",
@@ -3259,7 +3259,7 @@
             }
           },
           {
-            "id": 46,
+            "id": 84,
             "type": {
               "def": {
                 "array": {
@@ -3270,7 +3270,7 @@
             }
           },
           {
-            "id": 198,
+            "id": 85,
             "type": {
               "path": [
                 "sp_runtime",
@@ -3346,7 +3346,7 @@
             }
           },
           {
-            "id": 82,
+            "id": 86,
             "type": {
               "def": {
                 "compact": {
@@ -3356,7 +3356,7 @@
             }
           },
           {
-            "id": 199,
+            "id": 87,
             "type": {
               "def": {
                 "sequence": {
@@ -3366,7 +3366,7 @@
             }
           },
           {
-            "id": 197,
+            "id": 88,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3615,7 +3615,7 @@
             }
           },
           {
-            "id": 200,
+            "id": 89,
             "type": {
               "path": [
                 "pallet_balances",
@@ -3714,7 +3714,7 @@
             }
           },
           {
-            "id": 290,
+            "id": 90,
             "type": {
               "path": [
                 "peaq_pallet_did",
@@ -3837,7 +3837,7 @@
             }
           },
           {
-            "id": 294,
+            "id": 91,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -4341,7 +4341,7 @@
             }
           },
           {
-            "id": 204,
+            "id": 92,
             "type": {
               "path": [
                 "peaq_dev_runtime",
@@ -4396,7 +4396,7 @@
             }
           },
           {
-            "id": 436,
+            "id": 93,
             "type": {
               "def": {
                 "tuple": [
@@ -4407,7 +4407,7 @@
             }
           },
           {
-            "id": 437,
+            "id": 94,
             "type": {
               "path": [
                 "peaq_pallet_did",
@@ -4468,7 +4468,7 @@
             }
           },
           {
-            "id": 442,
+            "id": 95,
             "type": {
               "path": [
                 "peaq_pallet_rbac",
@@ -4542,7 +4542,7 @@
             }
           },
           {
-            "id": 450,
+            "id": 96,
             "type": {
               "def": {
                 "array": {
@@ -4553,7 +4553,7 @@
             }
           },
           {
-            "id": 449,
+            "id": 97,
             "type": {
               "path": [
                 "sp_core",
@@ -4573,7 +4573,7 @@
             }
           },
           {
-            "id": 451,
+            "id": 98,
             "type": {
               "path": [
                 "sp_core",
@@ -4593,7 +4593,7 @@
             }
           },
           {
-            "id": 287,
+            "id": 99,
             "type": {
               "def": {
                 "array": {
@@ -4604,7 +4604,7 @@
             }
           },
           {
-            "id": 452,
+            "id": 100,
             "type": {
               "path": [
                 "sp_core",
@@ -4624,7 +4624,7 @@
             }
           },
           {
-            "id": 448,
+            "id": 101,
             "type": {
               "path": [
                 "sp_runtime",
@@ -4669,7 +4669,7 @@
             }
           },
           {
-            "id": 454,
+            "id": 102,
             "type": {
               "path": [
                 "frame_system",
@@ -4689,7 +4689,7 @@
             }
           },
           {
-            "id": 455,
+            "id": 103,
             "type": {
               "path": [
                 "frame_system",
@@ -4709,7 +4709,7 @@
             }
           },
           {
-            "id": 456,
+            "id": 104,
             "type": {
               "path": [
                 "frame_system",
@@ -4729,7 +4729,7 @@
             }
           },
           {
-            "id": 458,
+            "id": 105,
             "type": {
               "path": [
                 "sp_runtime",
@@ -7045,7 +7045,7 @@
             }
           },
           {
-            "id": 457,
+            "id": 106,
             "type": {
               "path": [
                 "frame_system",
@@ -7072,7 +7072,7 @@
             }
           },
           {
-            "id": 459,
+            "id": 107,
             "type": {
               "path": [
                 "frame_system",
@@ -7099,7 +7099,7 @@
             }
           },
           {
-            "id": 460,
+            "id": 108,
             "type": {
               "path": [
                 "frame_system",
@@ -7119,7 +7119,7 @@
             }
           },
           {
-            "id": 461,
+            "id": 109,
             "type": {
               "path": [
                 "pallet_transaction_payment",
@@ -7144,7 +7144,7 @@
             }
           },
           {
-            "id": 453,
+            "id": 110,
             "type": {
               "def": {
                 "tuple": [
@@ -7160,7 +7160,7 @@
             }
           },
           {
-            "id": 463,
+            "id": 111,
             "type": {
               "path": [
                 "peaq_dev_runtime",
@@ -7826,7 +7826,7 @@
                 0,
                 0,
                 0,
-                12,
+                16,
                 0,
                 0,
                 0,

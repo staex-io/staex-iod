@@ -14,7 +14,7 @@ use subxt::{
         rpc::RpcClient,
     },
     blocks::Block,
-    config::Header,
+    config::{Header, PolkadotExtrinsicParamsBuilder},
     error::{RpcError, TransactionError},
     events::{EventDetails, Events, StaticEvent},
     ext::{codec::DecodeAll, sp_core::H256},
@@ -23,10 +23,7 @@ use subxt::{
     utils::AccountId32,
     OnlineClient, PolkadotConfig,
 };
-use subxt_signer::{
-    bip39::{self, Mnemonic},
-    sr25519::Keypair,
-};
+use subxt_signer::sr25519::Keypair;
 
 pub use peaq_gen;
 
@@ -140,12 +137,9 @@ impl Client {
     ) -> Result<TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>, Error> {
         let account_id = signer.account_id();
         let account_nonce = self.get_nonce(&account_id).await?;
-        let mut tx = self
-            .api
-            .tx()
-            .create_signed_with_nonce(call, signer, account_nonce, Default::default())?
-            .submit_and_watch()
-            .await?;
+        let params = PolkadotExtrinsicParamsBuilder::new().nonce(account_nonce).build();
+        let mut tx =
+            self.api.tx().create_signed(call, signer, params).await?.submit_and_watch().await?;
         while let Some(status) = tx.next().await {
             match status? {
                 TxStatus::InBestBlock(tx_in_block) | TxStatus::InFinalizedBlock(tx_in_block) => {
@@ -392,7 +386,7 @@ impl<'a> RBAC<'a> {
     }
 }
 
-pub fn generate_account() -> Result<(Mnemonic, Keypair, AccountId32), Error> {
+pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Error> {
     let phrase = bip39::Mnemonic::generate(12)?;
     let keypair = Keypair::from_phrase(&phrase, None)?;
     let account_id: AccountId32 =
@@ -429,17 +423,10 @@ mod tests {
         assert_eq!("\"AGUNG\"", token_symbol);
     }
 
-    #[ignore = "requires mnemonic phrase"]
+    #[ignore = "requires manually setup mnemonic phrase"]
     #[tokio::test]
     async fn test_rbac() {
-        let keypair = Keypair::from_phrase(
-            &Mnemonic::from_str(
-                "weather asthma become jealous hurry option canal boring hedgehog rule heavy spawn",
-            )
-            .unwrap(),
-            None,
-        )
-        .unwrap();
+        let keypair = Keypair::from_phrase(&Mnemonic::from_str("").unwrap(), None).unwrap();
         let owner: AccountId32 =
             <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
 
