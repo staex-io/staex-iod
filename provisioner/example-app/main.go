@@ -35,8 +35,8 @@ const (
 )
 
 type Measurement[T any] struct {
-	DataType DataType `json:"data_type"`
-	Data     T        `json:"data"`
+	Type    DataType `json:"data_type"`
+	Payload T        `json:"payload"`
 }
 
 type WindSpeed struct {
@@ -63,6 +63,8 @@ func main() {
 }
 
 func initCommands(stopC, doneC chan struct{}) *cobra.Command {
+	const serverAddressFlag = "server-address"
+
 	root := &cobra.Command{Use: "weather-gatherer"}
 	server := &cobra.Command{
 		Use:   "server",
@@ -79,15 +81,21 @@ func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 	client := &cobra.Command{
 		Use:   "client",
 		Short: "Start weather gatherer client",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			serverAddress, err := cmd.PersistentFlags().GetString(serverAddressFlag)
+			if err != nil {
+				return fmt.Errorf("failed to get server address flag: %w", err)
+			}
 			go func() {
-				if err := startClient(stopC, doneC); err != nil {
+				if err := startClient(serverAddress, stopC, doneC); err != nil {
 					log.Fatal().Err(err).Msg("failed to process client")
 				}
 			}()
 			wait(stopC, doneC)
+			return nil
 		},
 	}
+	client.PersistentFlags().StringP(serverAddressFlag, "a", "127.0.0.1:6699", "Set address to connect to MQTT server")
 	root.AddCommand(server)
 	root.AddCommand(client)
 	return root
@@ -130,8 +138,8 @@ func startServer(stopC, doneC chan struct{}) error {
 			case <-timer.C:
 				log.Debug().Msg("simulation iteration")
 				payload, err := json.Marshal(Measurement[WindSpeed]{
-					DataType: DataTypeWindSpeed,
-					Data: WindSpeed{
+					Type: DataTypeWindSpeed,
+					Payload: WindSpeed{
 						Value: rand.Intn(253-0) + 0,
 						Units: "mph",
 					},
@@ -140,8 +148,11 @@ func startServer(stopC, doneC chan struct{}) error {
 					log.Error().Err(err).Msg("failed to marshal measurement")
 					continue
 				}
-				if err := server.Publish(string(TopicMeasurement), payload, false, 0); err != nil {
+				if err := server.Publish(
+					string(TopicMeasurement), payload, false, 0,
+				); err != nil {
 					log.Error().Err(err).Msg("failed to publish new data")
+					continue
 				}
 			}
 		}
@@ -157,8 +168,8 @@ func startServer(stopC, doneC chan struct{}) error {
 	return nil
 }
 
-func startClient(stopC, doneC chan struct{}) error {
-	u, err := url.Parse("mqtt://127.0.0.1:6699")
+func startClient(serverAddress string, stopC, doneC chan struct{}) error {
+	u, err := url.Parse(fmt.Sprintf("mqtt://%s", serverAddress))
 	if err != nil {
 		return fmt.Errorf("failed to parse mqtt url: %w", err)
 	}
@@ -212,7 +223,7 @@ func onPublishReceived(event paho.PublishReceived) (bool, error) {
 		log.Error().Err(err).Msg("failed to unmarshal event payload")
 		return true, nil
 	}
-	switch measurement.DataType {
+	switch measurement.Type {
 	case DataTypeWindSpeed:
 		measurement := &Measurement[WindSpeed]{}
 		if err := json.Unmarshal(event.Packet.Payload, measurement); err != nil {
@@ -220,12 +231,12 @@ func onPublishReceived(event paho.PublishReceived) (bool, error) {
 			return true, nil
 		}
 		log.Info().
-			Int("value", measurement.Data.Value).
-			Str("units", measurement.Data.Units).
+			Int("value", measurement.Payload.Value).
+			Str("units", measurement.Payload.Units).
 			Msg("new wind speed event")
 	default:
 		log.Error().
-			Str("data_type", string(measurement.DataType)).
+			Str("data_type", string(measurement.Type)).
 			Msg("unknown measurement data type")
 		return true, nil
 	}
