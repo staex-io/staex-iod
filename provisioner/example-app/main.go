@@ -166,14 +166,7 @@ func startClient(stopC, doneC chan struct{}) error {
 		ServerUrls: []*url.URL{u},
 		KeepAlive:  60,
 		ClientConfig: paho.ClientConfig{
-			OnPublishReceived: []func(paho.PublishReceived) (bool, error){
-				func(event paho.PublishReceived) (bool, error) {
-					log.Debug().
-						Str("topic", event.Packet.Topic).Bytes("payload", event.Packet.Payload).
-						Msg("received new event")
-					return true, nil
-				},
-			},
+			OnPublishReceived: []func(paho.PublishReceived) (bool, error){onPublishReceived},
 		},
 	}
 	ctx := context.Background()
@@ -211,6 +204,32 @@ func startClient(stopC, doneC chan struct{}) error {
 
 	doneC <- struct{}{}
 	return nil
+}
+
+func onPublishReceived(event paho.PublishReceived) (bool, error) {
+	measurement := &Measurement[any]{}
+	if err := json.Unmarshal(event.Packet.Payload, measurement); err != nil {
+		log.Error().Err(err).Msg("failed to unmarshal event payload")
+		return true, nil
+	}
+	switch measurement.DataType {
+	case DataTypeWindSpeed:
+		measurement := &Measurement[WindSpeed]{}
+		if err := json.Unmarshal(event.Packet.Payload, measurement); err != nil {
+			log.Error().Err(err).Msg("failed to unmarshal wind speed measurement")
+			return true, nil
+		}
+		log.Info().
+			Int("value", measurement.Data.Value).
+			Str("units", measurement.Data.Units).
+			Msg("new wind speed event")
+	default:
+		log.Error().
+			Str("data_type", string(measurement.DataType)).
+			Msg("unknown measurement data type")
+		return true, nil
+	}
+	return true, nil
 }
 
 func wait(stopC, doneC chan struct{}) {
