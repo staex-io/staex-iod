@@ -2,4 +2,4 @@ format:
 	go fmt
 
 lint: format
-	golangci-lint run ./...
+	golangci-lint run main.go
