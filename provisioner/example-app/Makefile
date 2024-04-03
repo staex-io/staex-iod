@@ -1,5 +1,7 @@
 format:
-	go fmt
+	@go fmt
 
 lint: format
-	golangci-lint run main.go
+	@docker run --rm -v "${PWD}:/app" -w /app \
+		golangci/golangci-lint:v1.57.2 \
+		golangci-lint run main.go
