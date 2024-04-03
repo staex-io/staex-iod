@@ -627,7 +627,7 @@ pub mod api {
                 pub fn account_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::account::Account,
                     (),
                     ::subxt::storage::address::Yes,
@@ -636,7 +636,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "Account",
-                        vec![],
+                        (),
                         [
                             14u8, 233u8, 115u8, 214u8, 0u8, 109u8, 222u8, 121u8, 162u8, 65u8, 60u8,
                             175u8, 209u8, 79u8, 222u8, 124u8, 22u8, 235u8, 138u8, 176u8, 133u8,
@@ -648,7 +648,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::account::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::account::Param0>,
                     types::account::Account,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -657,9 +657,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "Account",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             14u8, 233u8, 115u8, 214u8, 0u8, 109u8, 222u8, 121u8, 162u8, 65u8, 60u8,
                             175u8, 209u8, 79u8, 222u8, 124u8, 22u8, 235u8, 138u8, 176u8, 133u8,
@@ -670,7 +668,7 @@ pub mod api {
                 pub fn extrinsic_count(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::extrinsic_count::ExtrinsicCount,
                     ::subxt::storage::address::Yes,
                     (),
@@ -679,7 +677,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "ExtrinsicCount",
-                        vec![],
+                        (),
                         [
                             102u8, 76u8, 236u8, 42u8, 40u8, 231u8, 33u8, 222u8, 123u8, 147u8,
                             153u8, 148u8, 234u8, 203u8, 181u8, 119u8, 6u8, 187u8, 177u8, 199u8,
@@ -691,7 +689,7 @@ pub mod api {
                 pub fn block_weight(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::block_weight::BlockWeight,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -700,7 +698,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "BlockWeight",
-                        vec![],
+                        (),
                         [
                             158u8, 46u8, 228u8, 89u8, 210u8, 214u8, 84u8, 154u8, 50u8, 68u8, 63u8,
                             62u8, 43u8, 42u8, 99u8, 27u8, 54u8, 42u8, 146u8, 44u8, 241u8, 216u8,
@@ -711,7 +709,7 @@ pub mod api {
                 pub fn all_extrinsics_len(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::all_extrinsics_len::AllExtrinsicsLen,
                     ::subxt::storage::address::Yes,
                     (),
@@ -720,7 +718,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "AllExtrinsicsLen",
-                        vec![],
+                        (),
                         [
                             117u8, 86u8, 61u8, 243u8, 41u8, 51u8, 102u8, 214u8, 137u8, 100u8,
                             243u8, 185u8, 122u8, 174u8, 187u8, 117u8, 86u8, 189u8, 63u8, 135u8,
@@ -732,7 +730,7 @@ pub mod api {
                 pub fn block_hash_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::block_hash::BlockHash,
                     (),
                     ::subxt::storage::address::Yes,
@@ -741,7 +739,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "BlockHash",
-                        vec![],
+                        (),
                         [
                             217u8, 32u8, 215u8, 253u8, 24u8, 182u8, 207u8, 178u8, 157u8, 24u8,
                             103u8, 100u8, 195u8, 165u8, 69u8, 152u8, 112u8, 181u8, 56u8, 192u8,
@@ -754,7 +752,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::block_hash::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::block_hash::Param0>,
                     types::block_hash::BlockHash,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -763,9 +761,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "BlockHash",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             217u8, 32u8, 215u8, 253u8, 24u8, 182u8, 207u8, 178u8, 157u8, 24u8,
                             103u8, 100u8, 195u8, 165u8, 69u8, 152u8, 112u8, 181u8, 56u8, 192u8,
@@ -777,7 +773,7 @@ pub mod api {
                 pub fn extrinsic_data_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::extrinsic_data::ExtrinsicData,
                     (),
                     ::subxt::storage::address::Yes,
@@ -786,7 +782,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "ExtrinsicData",
-                        vec![],
+                        (),
                         [
                             160u8, 180u8, 122u8, 18u8, 196u8, 26u8, 2u8, 37u8, 115u8, 232u8, 133u8,
                             220u8, 106u8, 245u8, 4u8, 129u8, 42u8, 84u8, 241u8, 45u8, 199u8, 179u8,
@@ -798,7 +794,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::extrinsic_data::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::extrinsic_data::Param0>,
                     types::extrinsic_data::ExtrinsicData,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -807,9 +803,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "ExtrinsicData",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             160u8, 180u8, 122u8, 18u8, 196u8, 26u8, 2u8, 37u8, 115u8, 232u8, 133u8,
                             220u8, 106u8, 245u8, 4u8, 129u8, 42u8, 84u8, 241u8, 45u8, 199u8, 179u8,
@@ -820,7 +814,7 @@ pub mod api {
                 pub fn number(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::number::Number,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -829,7 +823,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "Number",
-                        vec![],
+                        (),
                         [
                             30u8, 194u8, 177u8, 90u8, 194u8, 232u8, 46u8, 180u8, 85u8, 129u8, 14u8,
                             9u8, 8u8, 8u8, 23u8, 95u8, 230u8, 5u8, 13u8, 105u8, 125u8, 2u8, 22u8,
@@ -840,7 +834,7 @@ pub mod api {
                 pub fn parent_hash(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::parent_hash::ParentHash,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -849,7 +843,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "ParentHash",
-                        vec![],
+                        (),
                         [
                             26u8, 130u8, 11u8, 216u8, 155u8, 71u8, 128u8, 170u8, 30u8, 153u8, 21u8,
                             192u8, 62u8, 93u8, 137u8, 80u8, 120u8, 81u8, 202u8, 94u8, 248u8, 125u8,
@@ -860,7 +854,7 @@ pub mod api {
                 pub fn digest(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::digest::Digest,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -869,7 +863,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "Digest",
-                        vec![],
+                        (),
                         [
                             61u8, 64u8, 237u8, 91u8, 145u8, 232u8, 17u8, 254u8, 181u8, 16u8, 234u8,
                             91u8, 51u8, 140u8, 254u8, 131u8, 98u8, 135u8, 21u8, 37u8, 251u8, 20u8,
@@ -880,7 +874,7 @@ pub mod api {
                 pub fn events(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::events::Events,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -889,7 +883,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "Events",
-                        vec![],
+                        (),
                         [
                             227u8, 137u8, 42u8, 198u8, 5u8, 77u8, 97u8, 179u8, 75u8, 205u8, 177u8,
                             246u8, 150u8, 227u8, 38u8, 88u8, 91u8, 59u8, 236u8, 29u8, 254u8, 199u8,
@@ -900,7 +894,7 @@ pub mod api {
                 pub fn event_count(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::event_count::EventCount,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -909,7 +903,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "EventCount",
-                        vec![],
+                        (),
                         [
                             175u8, 24u8, 252u8, 184u8, 210u8, 167u8, 146u8, 143u8, 164u8, 80u8,
                             151u8, 205u8, 189u8, 189u8, 55u8, 220u8, 47u8, 101u8, 181u8, 33u8,
@@ -921,7 +915,7 @@ pub mod api {
                 pub fn event_topics_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::event_topics::EventTopics,
                     (),
                     ::subxt::storage::address::Yes,
@@ -930,7 +924,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "EventTopics",
-                        vec![],
+                        (),
                         [
                             40u8, 225u8, 14u8, 75u8, 44u8, 176u8, 76u8, 34u8, 143u8, 107u8, 69u8,
                             133u8, 114u8, 13u8, 172u8, 250u8, 141u8, 73u8, 12u8, 65u8, 217u8, 63u8,
@@ -942,7 +936,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::event_topics::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::event_topics::Param0>,
                     types::event_topics::EventTopics,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -951,9 +945,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "EventTopics",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             40u8, 225u8, 14u8, 75u8, 44u8, 176u8, 76u8, 34u8, 143u8, 107u8, 69u8,
                             133u8, 114u8, 13u8, 172u8, 250u8, 141u8, 73u8, 12u8, 65u8, 217u8, 63u8,
@@ -964,7 +956,7 @@ pub mod api {
                 pub fn last_runtime_upgrade(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::last_runtime_upgrade::LastRuntimeUpgrade,
                     ::subxt::storage::address::Yes,
                     (),
@@ -973,7 +965,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "LastRuntimeUpgrade",
-                        vec![],
+                        (),
                         [
                             137u8, 29u8, 175u8, 75u8, 197u8, 208u8, 91u8, 207u8, 156u8, 87u8,
                             148u8, 68u8, 91u8, 140u8, 22u8, 233u8, 1u8, 229u8, 56u8, 34u8, 40u8,
@@ -984,7 +976,7 @@ pub mod api {
                 pub fn upgraded_to_u32_ref_count(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::upgraded_to_u32_ref_count::UpgradedToU32RefCount,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -993,7 +985,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "UpgradedToU32RefCount",
-                        vec![],
+                        (),
                         [
                             229u8, 73u8, 9u8, 132u8, 186u8, 116u8, 151u8, 171u8, 145u8, 29u8, 34u8,
                             130u8, 52u8, 146u8, 124u8, 175u8, 79u8, 189u8, 147u8, 230u8, 234u8,
@@ -1004,7 +996,7 @@ pub mod api {
                 pub fn upgraded_to_triple_ref_count(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::upgraded_to_triple_ref_count::UpgradedToTripleRefCount,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -1013,7 +1005,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "UpgradedToTripleRefCount",
-                        vec![],
+                        (),
                         [
                             97u8, 66u8, 124u8, 243u8, 27u8, 167u8, 147u8, 81u8, 254u8, 201u8,
                             101u8, 24u8, 40u8, 231u8, 14u8, 179u8, 154u8, 163u8, 71u8, 81u8, 185u8,
@@ -1025,7 +1017,7 @@ pub mod api {
                 pub fn execution_phase(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::execution_phase::ExecutionPhase,
                     ::subxt::storage::address::Yes,
                     (),
@@ -1034,7 +1026,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "System",
                         "ExecutionPhase",
-                        vec![],
+                        (),
                         [
                             191u8, 129u8, 100u8, 134u8, 126u8, 116u8, 154u8, 203u8, 220u8, 200u8,
                             0u8, 26u8, 161u8, 250u8, 133u8, 205u8, 146u8, 24u8, 5u8, 156u8, 158u8,
@@ -2104,7 +2096,7 @@ pub mod api {
                 pub fn total_issuance(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::total_issuance::TotalIssuance,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2113,7 +2105,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "TotalIssuance",
-                        vec![],
+                        (),
                         [
                             116u8, 70u8, 119u8, 194u8, 69u8, 37u8, 116u8, 206u8, 171u8, 70u8,
                             171u8, 210u8, 226u8, 111u8, 184u8, 204u8, 206u8, 11u8, 68u8, 72u8,
@@ -2125,7 +2117,7 @@ pub mod api {
                 pub fn inactive_issuance(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::inactive_issuance::InactiveIssuance,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2134,7 +2126,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "InactiveIssuance",
-                        vec![],
+                        (),
                         [
                             212u8, 185u8, 19u8, 50u8, 250u8, 72u8, 173u8, 50u8, 4u8, 104u8, 161u8,
                             249u8, 77u8, 247u8, 204u8, 248u8, 11u8, 18u8, 57u8, 4u8, 82u8, 110u8,
@@ -2145,7 +2137,7 @@ pub mod api {
                 pub fn account_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::account::Account,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2154,7 +2146,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Account",
-                        vec![],
+                        (),
                         [
                             213u8, 38u8, 200u8, 69u8, 218u8, 0u8, 112u8, 181u8, 160u8, 23u8, 96u8,
                             90u8, 3u8, 88u8, 126u8, 22u8, 103u8, 74u8, 64u8, 69u8, 29u8, 247u8,
@@ -2166,7 +2158,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::account::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::account::Param0>,
                     types::account::Account,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2175,9 +2167,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Account",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             213u8, 38u8, 200u8, 69u8, 218u8, 0u8, 112u8, 181u8, 160u8, 23u8, 96u8,
                             90u8, 3u8, 88u8, 126u8, 22u8, 103u8, 74u8, 64u8, 69u8, 29u8, 247u8,
@@ -2188,7 +2178,7 @@ pub mod api {
                 pub fn locks_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::locks::Locks,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2197,7 +2187,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Locks",
-                        vec![],
+                        (),
                         [
                             10u8, 223u8, 55u8, 0u8, 249u8, 69u8, 168u8, 41u8, 75u8, 35u8, 120u8,
                             167u8, 18u8, 132u8, 9u8, 20u8, 91u8, 51u8, 27u8, 69u8, 136u8, 187u8,
@@ -2209,7 +2199,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::locks::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::locks::Param0>,
                     types::locks::Locks,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2218,9 +2208,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Locks",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             10u8, 223u8, 55u8, 0u8, 249u8, 69u8, 168u8, 41u8, 75u8, 35u8, 120u8,
                             167u8, 18u8, 132u8, 9u8, 20u8, 91u8, 51u8, 27u8, 69u8, 136u8, 187u8,
@@ -2231,7 +2219,7 @@ pub mod api {
                 pub fn reserves_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::reserves::Reserves,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2240,7 +2228,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Reserves",
-                        vec![],
+                        (),
                         [
                             112u8, 10u8, 241u8, 77u8, 64u8, 187u8, 106u8, 159u8, 13u8, 153u8,
                             140u8, 178u8, 182u8, 50u8, 1u8, 55u8, 149u8, 92u8, 196u8, 229u8, 170u8,
@@ -2252,7 +2240,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::reserves::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::reserves::Param0>,
                     types::reserves::Reserves,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2261,9 +2249,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Reserves",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             112u8, 10u8, 241u8, 77u8, 64u8, 187u8, 106u8, 159u8, 13u8, 153u8,
                             140u8, 178u8, 182u8, 50u8, 1u8, 55u8, 149u8, 92u8, 196u8, 229u8, 170u8,
@@ -2274,7 +2260,7 @@ pub mod api {
                 pub fn holds_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::holds::Holds,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2283,7 +2269,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Holds",
-                        vec![],
+                        (),
                         [
                             53u8, 126u8, 215u8, 237u8, 42u8, 223u8, 188u8, 150u8, 230u8, 107u8,
                             95u8, 24u8, 26u8, 235u8, 158u8, 149u8, 193u8, 191u8, 10u8, 194u8,
@@ -2296,7 +2282,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::holds::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::holds::Param0>,
                     types::holds::Holds,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2305,9 +2291,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Holds",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             53u8, 126u8, 215u8, 237u8, 42u8, 223u8, 188u8, 150u8, 230u8, 107u8,
                             95u8, 24u8, 26u8, 235u8, 158u8, 149u8, 193u8, 191u8, 10u8, 194u8,
@@ -2319,7 +2303,7 @@ pub mod api {
                 pub fn freezes_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::freezes::Freezes,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2328,7 +2312,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Freezes",
-                        vec![],
+                        (),
                         [
                             69u8, 49u8, 165u8, 76u8, 135u8, 142u8, 179u8, 118u8, 50u8, 109u8, 53u8,
                             112u8, 110u8, 94u8, 30u8, 93u8, 173u8, 38u8, 27u8, 142u8, 19u8, 5u8,
@@ -2340,7 +2324,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::freezes::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::freezes::Param0>,
                     types::freezes::Freezes,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2349,9 +2333,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "Balances",
                         "Freezes",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             69u8, 49u8, 165u8, 76u8, 135u8, 142u8, 179u8, 118u8, 50u8, 109u8, 53u8,
                             112u8, 110u8, 94u8, 30u8, 93u8, 173u8, 38u8, 27u8, 142u8, 19u8, 5u8,
@@ -2759,7 +2741,7 @@ pub mod api {
                 pub fn attribute_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::attribute_store::AttributeStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -2768,7 +2750,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqDid",
                         "AttributeStore",
-                        vec![],
+                        (),
                         [
                             123u8, 176u8, 156u8, 33u8, 193u8, 98u8, 43u8, 106u8, 200u8, 53u8,
                             127u8, 206u8, 139u8, 232u8, 168u8, 26u8, 230u8, 184u8, 130u8, 238u8,
@@ -2781,7 +2763,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::attribute_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::attribute_store::Param0>,
                     types::attribute_store::AttributeStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -2790,9 +2772,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqDid",
                         "AttributeStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             123u8, 176u8, 156u8, 33u8, 193u8, 98u8, 43u8, 106u8, 200u8, 53u8,
                             127u8, 206u8, 139u8, 232u8, 168u8, 26u8, 230u8, 184u8, 130u8, 238u8,
@@ -2804,7 +2784,7 @@ pub mod api {
                 pub fn owner_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::owner_store::OwnerStore,
                     (),
                     (),
@@ -2813,7 +2793,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqDid",
                         "OwnerStore",
-                        vec![],
+                        (),
                         [
                             129u8, 67u8, 69u8, 112u8, 36u8, 19u8, 200u8, 189u8, 18u8, 21u8, 216u8,
                             101u8, 59u8, 251u8, 47u8, 45u8, 250u8, 180u8, 100u8, 131u8, 93u8, 99u8,
@@ -2825,7 +2805,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::owner_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::owner_store::Param0>,
                     types::owner_store::OwnerStore,
                     (),
                     (),
@@ -2834,9 +2814,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqDid",
                         "OwnerStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             129u8, 67u8, 69u8, 112u8, 36u8, 19u8, 200u8, 189u8, 18u8, 21u8, 216u8,
                             101u8, 59u8, 251u8, 47u8, 45u8, 250u8, 180u8, 100u8, 131u8, 93u8, 99u8,
@@ -2849,7 +2827,10 @@ pub mod api {
                     _0: impl ::std::borrow::Borrow<types::owner_store::Param0>,
                     _1: impl ::std::borrow::Borrow<types::owner_store::Param1>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (
+                        ::subxt::storage::address::StaticStorageKey<types::owner_store::Param0>,
+                        ::subxt::storage::address::StaticStorageKey<types::owner_store::Param1>,
+                    ),
                     types::owner_store::OwnerStore,
                     ::subxt::storage::address::Yes,
                     (),
@@ -2858,10 +2839,10 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqDid",
                         "OwnerStore",
-                        vec![
-                            ::subxt::storage::address::make_static_storage_map_key(_0.borrow()),
-                            ::subxt::storage::address::make_static_storage_map_key(_1.borrow()),
-                        ],
+                        (
+                            ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
+                            ::subxt::storage::address::StaticStorageKey::new(_1.borrow()),
+                        ),
                         [
                             129u8, 67u8, 69u8, 112u8, 36u8, 19u8, 200u8, 189u8, 18u8, 21u8, 216u8,
                             101u8, 59u8, 251u8, 47u8, 45u8, 250u8, 180u8, 100u8, 131u8, 93u8, 99u8,
@@ -4796,7 +4777,7 @@ pub mod api {
                 pub fn role_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::role_store::RoleStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -4805,7 +4786,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "RoleStore",
-                        vec![],
+                        (),
                         [
                             214u8, 103u8, 180u8, 5u8, 212u8, 149u8, 225u8, 15u8, 192u8, 231u8,
                             73u8, 219u8, 131u8, 244u8, 78u8, 78u8, 243u8, 66u8, 119u8, 99u8, 52u8,
@@ -4818,7 +4799,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::role_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::role_store::Param0>,
                     types::role_store::RoleStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -4827,9 +4808,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "RoleStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             214u8, 103u8, 180u8, 5u8, 212u8, 149u8, 225u8, 15u8, 192u8, 231u8,
                             73u8, 219u8, 131u8, 244u8, 78u8, 78u8, 243u8, 66u8, 119u8, 99u8, 52u8,
@@ -4841,7 +4820,7 @@ pub mod api {
                 pub fn role2_user_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::role2_user_store::Role2UserStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -4850,7 +4829,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Role2UserStore",
-                        vec![],
+                        (),
                         [
                             176u8, 105u8, 152u8, 118u8, 5u8, 121u8, 238u8, 201u8, 82u8, 115u8,
                             90u8, 184u8, 198u8, 246u8, 169u8, 144u8, 125u8, 162u8, 25u8, 188u8,
@@ -4863,7 +4842,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::role2_user_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::role2_user_store::Param0>,
                     types::role2_user_store::Role2UserStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -4872,9 +4851,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Role2UserStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             176u8, 105u8, 152u8, 118u8, 5u8, 121u8, 238u8, 201u8, 82u8, 115u8,
                             90u8, 184u8, 198u8, 246u8, 169u8, 144u8, 125u8, 162u8, 25u8, 188u8,
@@ -4886,7 +4863,7 @@ pub mod api {
                 pub fn permission_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::permission_store::PermissionStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -4895,7 +4872,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "PermissionStore",
-                        vec![],
+                        (),
                         [
                             12u8, 54u8, 183u8, 22u8, 122u8, 96u8, 89u8, 180u8, 166u8, 101u8, 115u8,
                             7u8, 240u8, 150u8, 32u8, 153u8, 158u8, 221u8, 224u8, 204u8, 214u8, 1u8,
@@ -4907,7 +4884,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::permission_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::permission_store::Param0>,
                     types::permission_store::PermissionStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -4916,9 +4893,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "PermissionStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             12u8, 54u8, 183u8, 22u8, 122u8, 96u8, 89u8, 180u8, 166u8, 101u8, 115u8,
                             7u8, 240u8, 150u8, 32u8, 153u8, 158u8, 221u8, 224u8, 204u8, 214u8, 1u8,
@@ -4929,7 +4904,7 @@ pub mod api {
                 pub fn permission2_role_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::permission2_role_store::Permission2RoleStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -4938,7 +4913,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Permission2RoleStore",
-                        vec![],
+                        (),
                         [
                             181u8, 232u8, 98u8, 171u8, 240u8, 127u8, 33u8, 213u8, 222u8, 248u8,
                             113u8, 201u8, 53u8, 101u8, 22u8, 13u8, 88u8, 91u8, 212u8, 10u8, 17u8,
@@ -4951,7 +4926,9 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::permission2_role_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<
+                        types::permission2_role_store::Param0,
+                    >,
                     types::permission2_role_store::Permission2RoleStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -4960,9 +4937,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Permission2RoleStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             181u8, 232u8, 98u8, 171u8, 240u8, 127u8, 33u8, 213u8, 222u8, 248u8,
                             113u8, 201u8, 53u8, 101u8, 22u8, 13u8, 88u8, 91u8, 212u8, 10u8, 17u8,
@@ -4974,7 +4949,7 @@ pub mod api {
                 pub fn group_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::group_store::GroupStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -4983,7 +4958,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "GroupStore",
-                        vec![],
+                        (),
                         [
                             16u8, 167u8, 255u8, 114u8, 171u8, 255u8, 36u8, 194u8, 64u8, 5u8, 126u8,
                             92u8, 85u8, 238u8, 241u8, 234u8, 236u8, 95u8, 45u8, 56u8, 127u8, 121u8,
@@ -4995,7 +4970,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::group_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::group_store::Param0>,
                     types::group_store::GroupStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -5004,9 +4979,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "GroupStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             16u8, 167u8, 255u8, 114u8, 171u8, 255u8, 36u8, 194u8, 64u8, 5u8, 126u8,
                             92u8, 85u8, 238u8, 241u8, 234u8, 236u8, 95u8, 45u8, 56u8, 127u8, 121u8,
@@ -5017,7 +4990,7 @@ pub mod api {
                 pub fn role2_group_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::role2_group_store::Role2GroupStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -5026,7 +4999,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Role2GroupStore",
-                        vec![],
+                        (),
                         [
                             81u8, 128u8, 119u8, 164u8, 154u8, 48u8, 110u8, 108u8, 92u8, 229u8,
                             195u8, 201u8, 0u8, 57u8, 173u8, 147u8, 157u8, 98u8, 198u8, 100u8,
@@ -5039,7 +5012,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::role2_group_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::role2_group_store::Param0>,
                     types::role2_group_store::Role2GroupStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -5048,9 +5021,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "Role2GroupStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             81u8, 128u8, 119u8, 164u8, 154u8, 48u8, 110u8, 108u8, 92u8, 229u8,
                             195u8, 201u8, 0u8, 57u8, 173u8, 147u8, 157u8, 98u8, 198u8, 100u8,
@@ -5062,7 +5033,7 @@ pub mod api {
                 pub fn user2_group_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::user2_group_store::User2GroupStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -5071,7 +5042,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "User2GroupStore",
-                        vec![],
+                        (),
                         [
                             223u8, 199u8, 19u8, 69u8, 114u8, 109u8, 174u8, 254u8, 108u8, 68u8,
                             226u8, 191u8, 35u8, 207u8, 46u8, 170u8, 106u8, 32u8, 205u8, 199u8,
@@ -5084,7 +5055,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::user2_group_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::user2_group_store::Param0>,
                     types::user2_group_store::User2GroupStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -5093,9 +5064,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "User2GroupStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             223u8, 199u8, 19u8, 69u8, 114u8, 109u8, 174u8, 254u8, 108u8, 68u8,
                             226u8, 191u8, 35u8, 207u8, 46u8, 170u8, 106u8, 32u8, 205u8, 199u8,
@@ -5107,7 +5076,7 @@ pub mod api {
                 pub fn keys_look_up_store_iter(
                     &self,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    (),
                     types::keys_look_up_store::KeysLookUpStore,
                     (),
                     ::subxt::storage::address::Yes,
@@ -5116,7 +5085,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "KeysLookUpStore",
-                        vec![],
+                        (),
                         [
                             66u8, 252u8, 100u8, 63u8, 102u8, 65u8, 155u8, 178u8, 91u8, 212u8,
                             177u8, 115u8, 69u8, 252u8, 201u8, 125u8, 20u8, 138u8, 245u8, 105u8,
@@ -5129,7 +5098,7 @@ pub mod api {
                     &self,
                     _0: impl ::std::borrow::Borrow<types::keys_look_up_store::Param0>,
                 ) -> ::subxt::storage::address::Address<
-                    ::subxt::storage::address::StaticStorageMapKey,
+                    ::subxt::storage::address::StaticStorageKey<types::keys_look_up_store::Param0>,
                     types::keys_look_up_store::KeysLookUpStore,
                     ::subxt::storage::address::Yes,
                     ::subxt::storage::address::Yes,
@@ -5138,9 +5107,7 @@ pub mod api {
                     ::subxt::storage::address::Address::new_static(
                         "PeaqRbac",
                         "KeysLookUpStore",
-                        vec![::subxt::storage::address::make_static_storage_map_key(
-                            _0.borrow(),
-                        )],
+                        ::subxt::storage::address::StaticStorageKey::new(_0.borrow()),
                         [
                             66u8, 252u8, 100u8, 63u8, 102u8, 65u8, 155u8, 178u8, 91u8, 212u8,
                             177u8, 115u8, 69u8, 252u8, 201u8, 125u8, 20u8, 138u8, 245u8, 105u8,

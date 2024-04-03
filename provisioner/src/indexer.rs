@@ -159,7 +159,7 @@ impl Database {
         // Create file if not exists to be able to open and migrate.
         let file_name = cfg.dsn.split(':').collect::<Vec<&str>>()[1];
         if let Err(e) =
-            OpenOptions::new().read(true).write(true).create(true).create_new(true).open(file_name)
+            OpenOptions::new().read(true).create(true).append(true).create_new(true).open(file_name)
         {
             match e.kind() {
                 ErrorKind::AlreadyExists => (),
