@@ -87,7 +87,7 @@ func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 				return fmt.Errorf("failed to get server address flag: %w", err)
 			}
 			go func() {
-				if err := startClient(serverAddress, stopC, doneC); err != nil {
+				if err = startClient(serverAddress, stopC, doneC); err != nil {
 					log.Fatal().Err(err).Msg("failed to process client")
 				}
 			}()
