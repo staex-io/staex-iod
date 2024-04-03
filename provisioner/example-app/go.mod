@@ -1,6 +1,6 @@
 module example-app
 
-go 1.22.1
+go 1.21
 
 require (
 	github.com/eclipse/paho.golang v0.21.0
