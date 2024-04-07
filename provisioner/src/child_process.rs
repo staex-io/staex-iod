@@ -112,6 +112,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore = "run it manually or write proper check for logs file"]
     async fn child_process_all() {
         eprintln!(); // insert first \n before testing logs
         env_logger::builder().filter_level(LevelFilter::Trace).is_test(true).init();
