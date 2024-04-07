@@ -1,2 +1,3 @@
 config.toml
 staex-iod.sqlite
+logs/*
