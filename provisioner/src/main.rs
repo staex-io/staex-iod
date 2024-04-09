@@ -1,8 +1,8 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use clap::{Parser, Subcommand};
 use config::Faucet;
-use log::{error, info, warn, Level, LevelFilter};
+use log::{debug, error, info, warn, Level, LevelFilter};
 use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
 use serde::{Deserialize, Serialize};
 use subxt::{
@@ -17,6 +17,10 @@ use subxt_signer::{
     sr25519::Keypair,
     SecretUri,
 };
+use tokio::{
+    sync::{mpsc, watch},
+    time::timeout,
+};
 
 use crate::config::Config;
 
@@ -25,6 +29,7 @@ mod config;
 mod example_app;
 mod indexer;
 mod staex_mcc;
+mod sync_rbac;
 
 pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-ioa-device";
 
@@ -123,12 +128,19 @@ async fn main() -> Result<(), Error> {
         }
         Commands::Run {} => {
             let app: App = App::new(cfg).await?;
+            let (stop_s, stop_r) = watch::channel(());
             tokio::spawn(async move {
-                if let Err(e) = app.run().await {
+                if let Err(e) = app.run(stop_r).await {
                     error!("failed to run application: {e}")
                 }
-            })
-            .await?;
+            });
+            tokio::signal::ctrl_c().await?;
+            debug!("received termination signal");
+            stop_s.send(())?;
+            if let Err(e) = timeout(Duration::from_secs(10), stop_s.closed()).await {
+                error!("failed to stop staex mcc and example app because of timeout: {}", e);
+            }
+            info!("everything was stopped successfully");
         }
         Commands::Indexer {} => {
             indexer::run(cfg).await?;
@@ -168,8 +180,10 @@ impl App {
         })
     }
 
-    async fn run(&self) -> Result<(), Error> {
-        self.sync().await
+    async fn run(&self, stop_r: watch::Receiver<()>) -> Result<(), Error> {
+        self.sync().await?;
+        info!("device is synchronize; starting staex mcc and example app");
+        self.start(stop_r).await
     }
 
     async fn sync(&self) -> Result<(), Error> {
@@ -210,6 +224,28 @@ impl App {
                 info!("successfully created on-chain device");
             }
         }
+        Ok(())
+    }
+
+    async fn start(&self, stop_r: watch::Receiver<()>) -> Result<(), Error> {
+        let (restart_s, restart_r) = mpsc::channel::<()>(1);
+        let stop_r_ = stop_r.clone();
+        tokio::spawn(async move {
+            if let Err(e) = staex_mcc::run_staex_mcc(restart_r, stop_r_).await {
+                error!("failed to run staex mcc: {e}")
+            }
+        });
+        let stop_r_ = stop_r.clone();
+        tokio::spawn(async move {
+            if let Err(e) = example_app::run_example_app(stop_r_).await {
+                error!("failed to run example app: {e}")
+            }
+        });
+        tokio::spawn(async move {
+            if let Err(e) = sync_rbac::run_sync_rbac(restart_s, stop_r).await {
+                error!("failed to run sync rbac: {e}")
+            }
+        });
         Ok(())
     }
 
