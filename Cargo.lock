@@ -3118,6 +3118,7 @@ dependencies = [
  "axum",
  "clap",
  "env_logger",
+ "libc",
  "log",
  "peaq-client",
  "serde",

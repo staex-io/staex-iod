@@ -22,6 +22,7 @@ use crate::config::Config;
 
 mod child_process;
 mod config;
+mod example_app;
 mod indexer;
 mod staex_mcc;
 

@@ -76,16 +76,27 @@ impl ChildProcess {
                 let status = status?;
                 process_status(status, start_time, status_s)?;
             },
-            _ = kill_r => {
-                trace!("received signal to kill child: {start_time}");
-                child.start_kill()?;
-                let status = child.wait().await?;
-                process_status(status, start_time, status_s)?;
-                trace!("child was signalled to kill: {start_time}");
-            }
+            _ = kill_r => return kill_child(child, start_time, status_s).await
         };
         Ok(())
     }
+}
+
+async fn kill_child(
+    mut child: Child,
+    start_time: u128,
+    status_s: watch::Sender<Status>,
+) -> Result<(), Error> {
+    trace!("received signal to kill child: {start_time}");
+    let pid = child.id().ok_or("failed to get child process id")?;
+    let res = unsafe { libc::kill(pid as i32, libc::SIGINT) };
+    if res != 0 {
+        return Err(format!("failed to kill child process: {}", res).into());
+    }
+    let status = child.wait().await?;
+    process_status(status, start_time, status_s)?;
+    trace!("child was signalled to kill: {start_time}");
+    Ok(())
 }
 
 fn process_status(
@@ -102,8 +113,8 @@ fn process_status(
     Ok(())
 }
 
-pub(crate) async fn wait_status(mut status_r: watch::Receiver<Status>) -> Result<Status, Error> {
-    status_r.changed().await?;
+pub(crate) async fn wait_status(mut status_r: watch::Receiver<Status>) -> Result<Status, String> {
+    status_r.changed().await.map_err(|e| e.to_string())?;
     Ok(*status_r.borrow())
 }
 
