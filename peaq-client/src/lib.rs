@@ -29,6 +29,7 @@ pub use peaq_gen;
 
 pub type Error = Box<dyn std::error::Error>;
 
+#[derive(Clone)]
 pub struct Client {
     api: OnlineClient<PolkadotConfig>,
     rpc: RpcClient,
@@ -181,6 +182,7 @@ impl Client {
     }
 }
 
+#[derive(Clone)]
 pub struct SignerClient {
     client: Client,
     keypair: Keypair,

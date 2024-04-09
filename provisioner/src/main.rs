@@ -243,8 +243,9 @@ impl App {
                 error!("failed to run example app: {e}")
             }
         });
+        let peaq_client = self.peaq_client.clone();
         tokio::spawn(async move {
-            if let Err(e) = sync_rbac::run_sync_rbac(restart_s, stop_r).await {
+            if let Err(e) = sync_rbac::run_sync_rbac(peaq_client, restart_s, stop_r).await {
                 error!("failed to run sync rbac: {e}")
             }
         });
