@@ -23,7 +23,7 @@ use crate::config::Config;
 mod child_process;
 mod config;
 mod indexer;
-mod mcc;
+mod staex_mcc;
 
 pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-ioa-device";
 

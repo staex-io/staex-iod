@@ -75,3 +75,12 @@ curl -s -X GET -G 'http://127.0.0.1:4698/devices?limit=10&offset=0' --data-urlen
 ## Force device on-chain update
 
 Currently provisioner doesn't compare additional fields from config device with on-chain device additional fields while sync. So to update additional fields you need to enable force sync.
+
+## Testing
+
+### staex_mcc.rs
+
+```shell
+cargo test --no-run
+sudo /home/fedora/dev/github/staex-iod/target/debug/deps/provisioner-d1a1c699cf47514a --nocapture run_staex_mcc_all
+```

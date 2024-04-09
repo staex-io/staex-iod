@@ -25,15 +25,20 @@ pub(crate) struct ChildProcess {
 }
 
 impl ChildProcess {
-    pub(crate) async fn spawn(
+    pub(crate) fn spawn(
         cmd: &str,
         args: &[&str],
         status_s: watch::Sender<Status>,
     ) -> Result<Self, Error> {
         let mut cmd = Command::new(cmd);
 
-        let start_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        fs::create_dir_all(LOGS_DIR)?;
+        let start_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
+        if let Err(e) = fs::create_dir_all(LOGS_DIR) {
+            match e.kind() {
+                std::io::ErrorKind::AlreadyExists => (),
+                _ => return Err(e.into()),
+            }
+        };
         let stdout_file = fs::File::create_new(format!("{}/{}.stdout.txt", LOGS_DIR, start_time))?;
         let stderr_file = fs::File::create_new(format!("{}/{}.stderr.txt", LOGS_DIR, start_time))?;
         cmd.stdout::<Stdio>(stdout_file.into());
@@ -52,7 +57,7 @@ impl ChildProcess {
         Ok(Self { kill_s })
     }
 
-    pub(crate) async fn kill(self) -> Result<(), Error> {
+    pub(crate) fn kill(self) -> Result<(), Error> {
         if self.kill_s.is_closed() {
             return Ok(());
         }
@@ -61,7 +66,7 @@ impl ChildProcess {
 
     async fn wait(
         mut child: Child,
-        start_time: u64,
+        start_time: u128,
         status_s: watch::Sender<Status>,
         kill_r: oneshot::Receiver<()>,
     ) -> Result<(), Error> {
@@ -85,7 +90,7 @@ impl ChildProcess {
 
 fn process_status(
     status: ExitStatus,
-    start_time: u64,
+    start_time: u128,
     status_s: watch::Sender<Status>,
 ) -> Result<(), Error> {
     debug!("child ({start_time}) is stopped, status is {:?}", status);
@@ -97,7 +102,7 @@ fn process_status(
     Ok(())
 }
 
-pub(crate) async fn status(mut status_r: watch::Receiver<Status>) -> Result<Status, Error> {
+pub(crate) async fn wait_status(mut status_r: watch::Receiver<Status>) -> Result<Status, Error> {
     status_r.changed().await?;
     Ok(*status_r.borrow())
 }
@@ -122,16 +127,15 @@ mod tests {
             &["-c", "while true; do echo \"$(date +%s)\"; sleep 1; done"],
             status_s,
         )
-        .await
         .unwrap();
         let (done_s, done_r) = oneshot::channel::<()>();
         tokio::spawn(async move {
-            let status = status(status_r).await.unwrap();
+            let status = wait_status(status_r).await.unwrap();
             eprintln!("Status from test: {:?}", status.exit_status);
             done_s.send(()).unwrap();
         });
         sleep(Duration::from_secs(3)).await;
-        child_process.kill().await.unwrap();
+        child_process.kill().unwrap();
         done_r.await.unwrap();
     }
 }
