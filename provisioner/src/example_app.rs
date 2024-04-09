@@ -18,6 +18,7 @@ pub(crate) async fn run_example_app(mut stop_r: watch::Receiver<()>) -> Result<(
                 continue;
             }
             _ = stop_r.changed() => {
+                debug!("received stop signal");
                 child_process.kill()?;
                 process_status(wait_status(status_r).await?);
                 return Ok(());

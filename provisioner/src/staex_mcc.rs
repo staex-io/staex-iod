@@ -18,7 +18,10 @@ pub(crate) async fn run_staex_mcc(
     loop {
         tokio::select! {
             _ = restart_r.recv() => restart_staex_mcc().await?,
-            _ = stop_r.changed() => return Ok(())
+            _ = stop_r.changed() => {
+                debug!("received stop signal");
+                return Ok(());
+            }
         }
     }
 }

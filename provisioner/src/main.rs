@@ -107,6 +107,10 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let cli = Cli::parse();
+    if let Commands::Config {} = cli.command {
+        eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
+        return Ok(());
+    }
     let cfg: config::Config = || -> Result<config::Config, Error> {
         let buf = match std::fs::read_to_string(cli.config) {
             Ok(buf) => buf,
@@ -123,9 +127,6 @@ async fn main() -> Result<(), Error> {
         .filter_module("provisioner", cfg.log_level.parse::<Level>()?.to_level_filter())
         .init();
     match cli.command {
-        Commands::Config {} => {
-            eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
-        }
         Commands::Run {} => {
             let app: App = App::new(cfg).await?;
             let (stop_s, stop_r) = watch::channel(());
@@ -159,6 +160,7 @@ async fn main() -> Result<(), Error> {
             let app: App = App::new(cfg).await?;
             app.faucet(address).await?;
         }
+        _ => (),
     };
     Ok(())
 }
