@@ -45,7 +45,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "run it manually or write a result check"]
-    async fn run_example_app_all() {
+    async fn run_example_app_test() {
         eprintln!(); // insert first \n before testing logs
         env_logger::builder().filter_level(LevelFilter::Trace).is_test(true).init();
         let (stop_s, stop_r) = watch::channel(());

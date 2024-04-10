@@ -221,7 +221,7 @@ impl SignerClient {
         }
     }
 
-    fn address(&self) -> AccountId32 {
+   pub  fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
     }
 }
@@ -423,6 +423,12 @@ mod tests {
         let token_symbol: String = system_properties.get("tokenSymbol").unwrap().to_string();
         assert_eq!(18, token_decimals);
         assert_eq!("\"AGUNG\"", token_symbol);
+    }
+
+    #[tokio::test]
+    async fn get_latest_block() {
+        let client = Client::new("wss://rpcpc1-qa.agung.peaq.network").await.unwrap();
+        eprintln!("Latest block is {}", client.get_last_block().await.unwrap().block.header.number)
     }
 
     #[ignore = "requires manually setup mnemonic phrase"]

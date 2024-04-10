@@ -50,7 +50,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "start manually or write result checking"]
-    async fn run_staex_mcc_all() {
+    async fn run_staex_mcc_test() {
         eprintln!(); // insert first \n before testing logs
         env_logger::builder().filter_level(LevelFilter::Trace).is_test(true).init();
         let (restart_s, restart_r) = mpsc::channel::<()>(1);

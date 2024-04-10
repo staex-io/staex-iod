@@ -6,6 +6,14 @@
 cargo run -- --help
 ```
 
+### To run provisioner
+
+Because of StaexMCC we need sudo:
+
+```shell
+ cargo build && sudo ../target/debug/provisioner run
+```
+
 ### Example config file
 
 Config file should be location in provisioner root folder for default file path value.
@@ -40,8 +48,12 @@ price_access = 42.03995
 price_pin = 445.12222
 
 [device.attributes.additional]
-microcontroller = "stm32"
 device_age_in_years = 2
+microcontroller = "stm32"
+
+[rbac]
+init = true
+from_block = 2158939
 
 [indexer]
 from_block = 1731233
@@ -82,5 +94,14 @@ Currently provisioner doesn't compare additional fields from config device with 
 
 ```shell
 cargo test --no-run
-sudo /home/fedora/dev/github/staex-iod/target/debug/deps/provisioner-d1a1c699cf47514a --nocapture run_staex_mcc_all
+sudo /home/fedora/dev/github/staex-iod/target/debug/deps/provisioner-d1a1c699cf47514a --nocapture run_staex_mcc_test
 ```
+
+## RBAC
+
+1. Create permission (`staex_iod_mqtt_access`)
+2. Create role (`staex_iod_accessor`)
+3. Create group (`staex_iod_subscribers`)
+4. Assign permission to role
+5. Assign role to group
+6. Now we can add user to created group to give them access through StaexMCC

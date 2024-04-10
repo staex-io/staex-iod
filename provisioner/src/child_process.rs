@@ -129,7 +129,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "run it manually or write proper check for logs file"]
-    async fn child_process_all() {
+    async fn run_child_process_test() {
         eprintln!(); // insert first \n before testing logs
         env_logger::builder().filter_level(LevelFilter::Trace).is_test(true).init();
         let (status_s, status_r) = watch::channel(Status::default());

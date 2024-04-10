@@ -1,7 +1,6 @@
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use clap::{Parser, Subcommand};
-use config::Faucet;
 use log::{debug, error, info, warn, Level, LevelFilter};
 use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
 use serde::{Deserialize, Serialize};
@@ -28,8 +27,8 @@ mod child_process;
 mod config;
 mod example_app;
 mod indexer;
+mod rbac;
 mod staex_mcc;
-mod sync_rbac;
 
 pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-ioa-device";
 
@@ -166,30 +165,28 @@ async fn main() -> Result<(), Error> {
 }
 
 struct App {
+    cfg: config::Config,
     peaq_client: peaq_client::SignerClient,
-    faucet: Faucet,
-    device: config::Device,
 }
 
 impl App {
     async fn new(cfg: Config) -> Result<Self, Error> {
         let keypair = get_keypair(&cfg.signer)?;
         let peaq_client = peaq_client::SignerClient::new(&cfg.rpc_url, keypair).await?;
-        Ok(Self {
-            peaq_client,
-            faucet: cfg.faucet,
-            device: cfg.device,
-        })
+        Ok(Self { cfg, peaq_client })
     }
 
     async fn run(&self, stop_r: watch::Receiver<()>) -> Result<(), Error> {
-        self.sync().await?;
-        info!("device is synchronize; starting staex mcc and example app");
+        self.sync_did().await?;
+        info!("device is synchronize");
+        rbac::init_rbac(&self.cfg.rbac, &self.peaq_client).await?;
+        info!("rbac is initialized");
+        info!("starting staex mcc and example app");
         self.start(stop_r).await
     }
 
-    async fn sync(&self) -> Result<(), Error> {
-        if !self.device.sync {
+    async fn sync_did(&self) -> Result<(), Error> {
+        if !self.cfg.device.sync {
             return Ok(());
         }
         let last_block = self.peaq_client.get_last_block().await?;
@@ -202,11 +199,11 @@ impl App {
             .did()
             .read_attribute::<ReadResult, _>(DEVICE_ATTRIBUTE_NAME, Some(filter))
             .await?;
-        let sync_state = get_sync_state(read_result, &self.device);
+        let sync_state = get_sync_state(read_result, &self.cfg.device);
         match sync_state {
             SyncState::Ok => {
                 info!("on-chain device is up to date");
-                if self.device.force {
+                if self.cfg.device.force {
                     warn!("force sync is enabled; starting to sync it");
                     let value = self.prepare_device()?;
                     self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
@@ -243,9 +240,10 @@ impl App {
                 error!("failed to run example app: {e}")
             }
         });
+        let cfg_rbac = self.cfg.rbac.clone();
         let peaq_client = self.peaq_client.clone();
         tokio::spawn(async move {
-            if let Err(e) = sync_rbac::run_sync_rbac(peaq_client, restart_s, stop_r).await {
+            if let Err(e) = rbac::sync_rbac(cfg_rbac, peaq_client, restart_s, stop_r).await {
                 error!("failed to run sync rbac: {e}")
             }
         });
@@ -253,7 +251,7 @@ impl App {
     }
 
     async fn faucet(&self, account_id: AccountId32) -> Result<(), Error> {
-        let signer = get_keypair(&self.faucet.signer)?;
+        let signer = get_keypair(&self.cfg.faucet.signer)?;
         let faucet_account_id: AccountId32 =
             <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&signer);
         let balance = self.peaq_client.get_balance(&faucet_account_id).await?;
@@ -262,7 +260,7 @@ impl App {
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance before: {}", balance);
 
-        self.peaq_client.transfer(self.faucet.amount as u128, account_id.clone()).await?;
+        self.peaq_client.transfer(self.cfg.faucet.amount as u128, account_id.clone()).await?;
 
         let balance = self.peaq_client.get_balance(&account_id).await?;
         info!("address balance after: {}", balance);
@@ -276,11 +274,11 @@ impl App {
 
     fn prepare_device(&self) -> Result<Vec<u8>, Error> {
         let device = Device::V1(DeviceV1 {
-            data_type: self.device.attributes.data_type.clone(),
-            location: self.device.attributes.location.clone(),
-            price_pin: self.device.attributes.price_pin,
-            price_access: self.device.attributes.price_access,
-            additional: self.device.attributes.additional.clone(),
+            data_type: self.cfg.device.attributes.data_type.clone(),
+            location: self.cfg.device.attributes.location.clone(),
+            price_pin: self.cfg.device.attributes.price_pin,
+            price_access: self.cfg.device.attributes.price_access,
+            additional: self.cfg.device.attributes.additional.clone(),
         });
         let value = serde_json::to_vec(&device)?;
         Ok(value)

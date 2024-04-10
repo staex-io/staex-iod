@@ -9,6 +9,7 @@ pub(crate) struct Config {
     pub(crate) signer: Signer,
     pub(crate) faucet: Faucet,
     pub(crate) device: Device,
+    pub(crate) rbac: RBAC,
     pub(crate) indexer: Indexer,
 }
 
@@ -20,6 +21,7 @@ impl Default for Config {
             signer: Default::default(),
             faucet: Default::default(),
             device: Default::default(),
+            rbac: Default::default(),
             indexer: Indexer::default(),
         }
     }
@@ -59,6 +61,22 @@ impl Default for Device {
             sync: true,
             force: false,
             attributes: Attributes::default(),
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[allow(clippy::upper_case_acronyms)]
+pub(crate) struct RBAC {
+    pub(crate) init: bool,
+    pub(crate) from_block: u64,
+}
+
+impl Default for RBAC {
+    fn default() -> Self {
+        Self {
+            init: true,
+            from_block: 2158939,
         }
     }
 }
