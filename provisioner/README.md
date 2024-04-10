@@ -46,10 +46,11 @@ data_type = "cctv-camera"
 location = "40.1949288120072,44.55177253802097"
 price_access = 42.03995
 price_pin = 445.12222
+staex_mcc_id = "g5zkjxhge9jqjfvjm1s539xgc7pqt1h9gm59txg1xn4xazfqqbwg"
 
 [device.attributes.additional]
-device_age_in_years = 2
 microcontroller = "stm32"
+device_age_in_years = 2
 
 [rbac]
 init = true

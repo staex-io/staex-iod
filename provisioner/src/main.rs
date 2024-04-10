@@ -4,7 +4,7 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 use clap::{Parser, Subcommand};
 use log::{debug, error, info, trace, warn, Level, LevelFilter};
 use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use subxt::{
     config::Header,
     events::{EventDetails, StaticEvent},
@@ -13,7 +13,7 @@ use subxt::{
     PolkadotConfig,
 };
 use subxt_signer::{
-    bip39::{self},
+    bip39::{self, Mnemonic},
     sr25519::Keypair,
     SecretUri,
 };
@@ -31,7 +31,8 @@ mod indexer;
 mod rbac;
 mod staex_mcc;
 
-pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-ioa-device";
+pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
+pub(crate) const CLIENT_INFO_ATTRIBUTE_NAME: &str = "staex-iod-client";
 
 pub(crate) type Error = Box<dyn std::error::Error>;
 
@@ -63,16 +64,22 @@ pub(crate) struct DeviceV1 {
     location: String,
     price_access: f64,
     price_pin: f64,
+    staex_mcc_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     additional: Option<HashMap<String, toml::Value>>,
 }
 
-enum ReadResult {
-    Ok(Device),
+#[derive(Serialize, Deserialize)]
+pub(crate) struct ClientInfo {
+    pub(crate) staex_mcc_id: String,
+}
+
+pub(crate) enum ReadResult<T> {
+    Ok(T),
     DecodeError,
 }
 
-/// Command line utility to interact with StaexIoD provisioner.
+/// Command line utility to interact with Staex IoD provisioner.
 #[derive(Parser)]
 #[clap(name = "provisioner")]
 #[command(author, version, about, long_about = None)]
@@ -81,6 +88,10 @@ struct Cli {
     #[arg(short, long)]
     #[arg(default_value = "config.toml")]
     config: String,
+    /// Set RPC URL for PEAQ network.
+    #[arg(short, long)]
+    #[arg(default_value = "wss://rpcpc1-qa.agung.peaq.network")]
+    rpc_url: String,
     #[clap(subcommand)]
     command: Commands,
 }
@@ -100,6 +111,14 @@ enum Commands {
         /// User address.
         address: AccountId32,
     },
+    /// Update client DID attributes.
+    /// This command can be used to map StaexMCC Id with PEAQ address.
+    UpdateClient {
+        /// Secret phrase.
+        phrase: Mnemonic,
+        /// StaexMCC identifier.
+        staex_mcc_id: String,
+    },
     /// Remove on-chain device.
     SelfRemove {},
     /// Faucet account.
@@ -112,9 +131,22 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-    if let Commands::Config {} = cli.command {
-        eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
-        return Ok(());
+    match cli.command {
+        Commands::Config {} => {
+            eprint!("{}", toml::to_string_pretty(&config::Config::default())?);
+            return Ok(());
+        }
+        Commands::UpdateClient {
+            phrase,
+            staex_mcc_id,
+        } => {
+            let keypair = Keypair::from_phrase(&phrase, None)?;
+            let peaq_client = peaq_client::SignerClient::new(&cli.rpc_url, keypair).await?;
+            let value = serde_json::to_vec(&ClientInfo { staex_mcc_id })?;
+            peaq_client.did().add_attribute(CLIENT_INFO_ATTRIBUTE_NAME, value).await?;
+            return Ok(());
+        }
+        _ => (),
     }
     let cfg: config::Config = || -> Result<config::Config, Error> {
         let buf = match std::fs::read_to_string(cli.config) {
@@ -204,10 +236,14 @@ impl App {
             "starting to get on-chain device information starting from {} block",
             last_block.block.header.number()
         );
-        let read_result: Option<ReadResult> = self
+        let read_result: Option<ReadResult<Device>> = self
             .peaq_client
             .did()
-            .read_attribute::<ReadResult, _>(DEVICE_ATTRIBUTE_NAME, Some(filter))
+            .read_attribute::<ReadResult<Device>, _>(
+                DEVICE_ATTRIBUTE_NAME,
+                self.peaq_client.address().clone(),
+                Some(read_attribute_filter),
+            )
             .await?;
         let sync_state = get_sync_state(read_result, &self.cfg.device);
         match sync_state {
@@ -296,6 +332,7 @@ impl App {
             location: self.cfg.device.attributes.location.clone(),
             price_pin: self.cfg.device.attributes.price_pin,
             price_access: self.cfg.device.attributes.price_access,
+            staex_mcc_id: self.cfg.device.attributes.staex_mcc_id.clone(),
             additional: self.cfg.device.attributes.additional.clone(),
         });
         let value = serde_json::to_vec(&device)?;
@@ -303,20 +340,14 @@ impl App {
     }
 }
 
-fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
-    match cfg.typ {
-        config::SignerType::Phrase => {
-            Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
-        }
-        config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
-    }
-}
-
-fn filter(event: EventDetails<PolkadotConfig>) -> Option<ReadResult> {
+pub(crate) fn read_attribute_filter<T>(event: EventDetails<PolkadotConfig>) -> Option<ReadResult<T>>
+where
+    T: DeserializeOwned,
+{
     if event.variant_name() == AttributeRead::EVENT {
         if let Ok(Some(evt)) = event.as_event::<AttributeRead>() {
             match serde_json::from_slice(&evt.0.value) {
-                Ok(device) => return Some(ReadResult::Ok(device)),
+                Ok(data) => return Some(ReadResult::Ok(data)),
                 Err(e) => {
                     // Looks like we have outdated format.
                     warn!("failed to decode on-chain attribute: {}", e);
@@ -328,7 +359,16 @@ fn filter(event: EventDetails<PolkadotConfig>) -> Option<ReadResult> {
     None
 }
 
-fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) -> SyncState {
+fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
+    match cfg.typ {
+        config::SignerType::Phrase => {
+            Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
+        }
+        config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
+    }
+}
+
+fn get_sync_state(read_result: Option<ReadResult<Device>>, expected: &config::Device) -> SyncState {
     if read_result.is_none() {
         return SyncState::NotCreated;
     }
@@ -341,6 +381,7 @@ fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) ->
                     || device.location != expected.attributes.location
                     || device.price_access != expected.attributes.price_access
                     || device.price_pin != expected.attributes.price_pin
+                    || device.staex_mcc_id != expected.attributes.staex_mcc_id
                 {
                     SyncState::Outdated
                 } else {

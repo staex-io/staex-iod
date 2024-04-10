@@ -91,6 +91,7 @@ pub(crate) struct Attributes {
     pub(crate) location: String,
     pub(crate) price_access: f64,
     pub(crate) price_pin: f64,
+    pub(crate) staex_mcc_id: String,
     pub(crate) additional: Option<HashMap<String, toml::Value>>,
 }
 
@@ -101,6 +102,7 @@ impl Default for Attributes {
             location: "40.1949288120072,44.55177253802097".to_string(),
             price_access: 42.03995,
             price_pin: 445.12222,
+            staex_mcc_id: "g5zkjxhge9jqjfvjm1s539xgc7pqt1h9gm59txg1xn4xazfqqbwg".to_string(),
             additional: Some(HashMap::from([
                 ("microcontroller".to_string(), "stm32".into()),
                 ("device_age_in_years".to_string(), 2.into()),

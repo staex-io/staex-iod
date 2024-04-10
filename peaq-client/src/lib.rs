@@ -255,14 +255,13 @@ impl<'a> DID<'a> {
     pub async fn read_attribute<T, F>(
         &self,
         name: &str,
+        address: AccountId32,
         filter: Option<F>,
     ) -> Result<Option<T>, Error>
     where
         F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
     {
-        let call = self
-            .peaq_did_api
-            .read_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        let call = self.peaq_did_api.read_attribute(address, name.as_bytes().to_vec());
         let tx = self.signer_client.submit_tx(&call).await?;
         match self.client.process_events(tx, filter).await {
             Ok(data) => Ok(data),

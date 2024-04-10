@@ -11,7 +11,10 @@ use tokio::{
     time::{sleep, timeout},
 };
 
-use crate::{config, vec_to_bytes, Error};
+use crate::{
+    config, read_attribute_filter, vec_to_bytes, ClientInfo, Error, ReadResult,
+    CLIENT_INFO_ATTRIBUTE_NAME,
+};
 
 const PERMISSION_NAME: &str = "staex_iod_mqtt_access";
 const ROLE_NAME: &str = "staex_iod_accessor";
@@ -59,7 +62,7 @@ pub(crate) async fn sync_rbac(
         tokio::select! {
             _ = sleep(sleep_duration) => {
                 match timeout(
-                        Duration::from_secs(10),
+                        Duration::from_secs(60),
                         fetch_rbac(
                             peaq_client.clone(),
                             group_id,
@@ -106,10 +109,35 @@ async fn fetch_rbac(
         if event.0 == peaq_client.address() && event.2 == group_id {
             let address = AccountId32::from(event.1);
             info!("received new access for {}", address);
+            check_user(address, &peaq_client).await?;
         }
     }
-    // todo: get mcc id from did and save to mcc config file
-    // todo: get events from blocks like indexer and if see new rbac event -> update config -> restart mcc
+    Ok(())
+}
+
+async fn check_user(address: AccountId32, peaq_client: &SignerClient) -> Result<(), Error> {
+    info!("starting to get on-chain did to get staex mcc id");
+    let client_info = match peaq_client
+        .did()
+        .read_attribute::<ReadResult<ClientInfo>, _>(
+            CLIENT_INFO_ATTRIBUTE_NAME,
+            address.clone(),
+            Some(read_attribute_filter),
+        )
+        .await?
+        .ok_or("on-chain client attributes are empty")?
+    {
+        ReadResult::Ok(client) => client,
+        ReadResult::DecodeError => {
+            return Err("failed to decode on-chain result with client did attributes".into())
+        }
+    };
+    debug!("client staex mcc id is {} for address {address}", client_info.staex_mcc_id);
+
+    // todo: check user permissions because they can be outdated because of continuously events parsing
+    // todo: update mcc config file
+    // todo: send by channel to restart mcc
     // todo: we need to do the same with rbac revocation
+
     Ok(())
 }
