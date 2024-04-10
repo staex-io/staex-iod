@@ -70,6 +70,7 @@ impl Default for Device {
 pub(crate) struct RBAC {
     pub(crate) init: bool,
     pub(crate) from_block: u64,
+    pub(crate) group_id: String,
 }
 
 impl Default for RBAC {
@@ -77,6 +78,7 @@ impl Default for RBAC {
         Self {
             init: true,
             from_block: 2158939,
+            group_id: "c/IMtbTiCQDNM5rPRV3RzNVW052oLqiWpfYMwl0oN/k=".to_string(),
         }
     }
 }

@@ -11,7 +11,7 @@ cargo run -- --help
 Because of StaexMCC we need sudo:
 
 ```shell
- cargo build && sudo ../target/debug/provisioner run
+cargo build && sudo ../target/debug/provisioner run
 ```
 
 ### Example config file
@@ -54,6 +54,7 @@ microcontroller = "stm32"
 [rbac]
 init = true
 from_block = 2158939
+group_id = "c/IMtbTiCQDNM5rPRV3RzNVW052oLqiWpfYMwl0oN/k="
 
 [indexer]
 from_block = 1731233

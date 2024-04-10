@@ -2,13 +2,16 @@ use std::time::Duration;
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use log::{debug, error, info, trace};
-use peaq_client::{peaq_gen::api::peaq_rbac::events::UserAssignedToGroup, SignerClient};
+use peaq_client::{
+    peaq_gen::api::peaq_rbac::events::UserAssignedToGroup, SignerClient, ENTITY_ID_LENGTH,
+};
+use subxt::utils::AccountId32;
 use tokio::{
     sync::{mpsc, watch},
     time::{sleep, timeout},
 };
 
-use crate::{config, Error};
+use crate::{config, vec_to_bytes, Error};
 
 const PERMISSION_NAME: &str = "staex_iod_mqtt_access";
 const ROLE_NAME: &str = "staex_iod_accessor";
@@ -42,6 +45,7 @@ pub(crate) async fn sync_rbac(
     restart_s: mpsc::Sender<()>,
     mut stop_r: watch::Receiver<()>,
 ) -> Result<(), Error> {
+    let group_id = vec_to_bytes(BASE64_STANDARD.decode(cfg.group_id)?)?;
     let mut last_processed_block = if cfg.from_block == 0 {
         let latest_block = peaq_client.get_last_block().await?;
         trace!("use latest block {} to sync rbac", latest_block.block.header.number);
@@ -58,6 +62,7 @@ pub(crate) async fn sync_rbac(
                         Duration::from_secs(10),
                         fetch_rbac(
                             peaq_client.clone(),
+                            group_id,
                             last_processed_block,
                             restart_s.clone()),
                         ).await {
@@ -87,19 +92,23 @@ pub(crate) async fn sync_rbac(
 
 async fn fetch_rbac(
     peaq_client: SignerClient,
+    group_id: [u8; ENTITY_ID_LENGTH],
     last_processed_block: u64,
     _restart_s: mpsc::Sender<()>,
 ) -> Result<(), Error> {
     debug!("starting to synchronize rbac with block {last_processed_block}");
-    // todo: start in block to config file
     let events = peaq_client
         .get_events_in_block(last_processed_block)
         .await?
         .ok_or("empty events returned")?;
     let user_assigned_to_group_events = events.find::<UserAssignedToGroup>();
     for event in user_assigned_to_group_events.flatten() {
-        eprintln!("New user assigned to group: {:?}", event);
+        if event.0 == peaq_client.address() && event.2 == group_id {
+            let address = AccountId32::from(event.1);
+            info!("received new access for {}", address);
+        }
     }
+    // todo: get mcc id from did and save to mcc config file
     // todo: get events from blocks like indexer and if see new rbac event -> update config -> restart mcc
     // todo: we need to do the same with rbac revocation
     Ok(())

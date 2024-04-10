@@ -1,7 +1,8 @@
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
+use base64::{prelude::BASE64_STANDARD, Engine};
 use clap::{Parser, Subcommand};
-use log::{debug, error, info, warn, Level, LevelFilter};
+use log::{debug, error, info, trace, warn, Level, LevelFilter};
 use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
 use serde::{Deserialize, Serialize};
 use subxt::{
@@ -94,6 +95,11 @@ enum Commands {
     Indexer {},
     /// Create new account.
     NewAccount {},
+    /// Grant access to provisioner to the new user.
+    GrantAccess {
+        /// User address.
+        address: AccountId32,
+    },
     /// Remove on-chain device.
     SelfRemove {},
     /// Faucet account.
@@ -146,14 +152,18 @@ async fn main() -> Result<(), Error> {
             indexer::run(cfg).await?;
             tokio::signal::ctrl_c().await?;
         }
-        Commands::SelfRemove {} => {
-            let app: App = App::new(cfg).await?;
-            app.self_remove().await?;
-        }
         Commands::NewAccount {} => {
             let (phrase, _, account_id) = generate_account()?;
             eprintln!("Phrase: {}", phrase);
             eprintln!("Address: {}", account_id);
+        }
+        Commands::GrantAccess { address } => {
+            let app: App = App::new(cfg).await?;
+            app.grant_access(address).await?;
+        }
+        Commands::SelfRemove {} => {
+            let app: App = App::new(cfg).await?;
+            app.self_remove().await?;
         }
         Commands::Faucet { address } => {
             let app: App = App::new(cfg).await?;
@@ -267,6 +277,14 @@ impl App {
         Ok(())
     }
 
+    async fn grant_access(&self, address: AccountId32) -> Result<(), Error> {
+        let group_id = BASE64_STANDARD.decode(&self.cfg.rbac.group_id)?;
+        let group_id = vec_to_bytes(group_id)?;
+        trace!("address array is {:?}", address.0);
+        trace!("group id array is {:?}", group_id);
+        self.peaq_client.rbac().assign_user_to_group(address.0, group_id).await
+    }
+
     async fn self_remove(&self) -> Result<(), Error> {
         info!("starting to do self-remove");
         self.peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await
@@ -331,4 +349,14 @@ fn get_sync_state(read_result: Option<ReadResult>, expected: &config::Device) ->
             }
         },
     }
+}
+
+pub(crate) fn vec_to_bytes<T, const N: usize>(v: Vec<T>) -> Result<[T; N], Error> {
+    Ok(v.try_into().map_err(|v: Vec<T>| {
+        format!(
+            "failed to convert vector to array because vector length is {} but expected {}",
+            v.len(),
+            N
+        )
+    })?)
 }

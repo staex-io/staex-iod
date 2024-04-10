@@ -221,7 +221,7 @@ impl SignerClient {
         }
     }
 
-   pub  fn address(&self) -> AccountId32 {
+    pub fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
     }
 }
@@ -429,6 +429,16 @@ mod tests {
     async fn get_latest_block() {
         let client = Client::new("wss://rpcpc1-qa.agung.peaq.network").await.unwrap();
         eprintln!("Latest block is {}", client.get_last_block().await.unwrap().block.header.number)
+    }
+
+    #[test]
+    #[ignore = "run it manually to set phrase"]
+    fn get_address_from_phrase() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        eprintln!("Account id {}", account_id)
     }
 
     #[ignore = "requires manually setup mnemonic phrase"]
