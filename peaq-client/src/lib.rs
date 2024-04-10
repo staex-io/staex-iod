@@ -2,7 +2,11 @@ use std::ops::Deref;
 
 use peaq_gen::api::{
     peaq_did,
-    peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
+    peaq_rbac::{
+        self,
+        calls::types::fetch_role::Entity,
+        events::{AllPermissionsFetched, FetchedUserPermissions},
+    },
 };
 use rand::RngCore;
 use subxt::{
@@ -385,6 +389,17 @@ impl<'a> RBAC<'a> {
             .ok_or_else(|| "failed to find permission entities for user".to_string())?;
         Ok(entities)
     }
+
+    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<RBACRecord>, Error> {
+        let call = self.peaq_rbac_api.fetch_permissions(owner);
+        let tx = self.signer_client.submit_tx(&call).await?;
+        let entities = self
+            .client
+            .process_events(tx, Some(filter_all_permissions_fetched))
+            .await?
+            .ok_or_else(|| "failed to find all permissions for the owner".to_string())?;
+        Ok(entities)
+    }
 }
 
 pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Error> {
@@ -398,6 +413,15 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
 fn filter_fetched_user_permissions(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
     if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
         if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
+            return Some(evt.0);
+        }
+    }
+    None
+}
+
+fn filter_all_permissions_fetched(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
+    if event.variant_name() == peaq_rbac::events::AllPermissionsFetched::EVENT {
+        if let Ok(Some(evt)) = event.as_event::<AllPermissionsFetched>() {
             return Some(evt.0);
         }
     }
@@ -438,6 +462,21 @@ mod tests {
         let account_id: AccountId32 =
             <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
         eprintln!("Account id {}", account_id)
+    }
+
+    #[tokio::test]
+    #[ignore = "run it manually to set phrase"]
+    async fn get_owner_permissions() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let client =
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+        let permissions = client.rbac().fetch_permissions(account_id).await.unwrap();
+        for permission in permissions {
+            eprintln!("{:?} : {:?}", from_utf8(&permission.name), permission.id);
+        }
     }
 
     #[ignore = "requires manually setup mnemonic phrase"]

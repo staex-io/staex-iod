@@ -8,7 +8,7 @@ cargo run -- --help
 
 ### To run provisioner
 
-Because of StaexMCC we need sudo:
+Because StaexMCC is running through systemctl we need sudo:
 
 ```shell
 cargo build && sudo ../target/debug/provisioner run
@@ -56,6 +56,7 @@ device_age_in_years = 2
 init = true
 from_block = 2158939
 group_id = "c/IMtbTiCQDNM5rPRV3RzNVW052oLqiWpfYMwl0oN/k="
+permission_id = "Hz6QvvQNX3SgBn26q/HS9etIyS74gC7622JVCBanNT0="
 
 [indexer]
 from_block = 1731233

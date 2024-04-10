@@ -71,6 +71,7 @@ pub(crate) struct RBAC {
     pub(crate) init: bool,
     pub(crate) from_block: u64,
     pub(crate) group_id: String,
+    pub(crate) permission_id: String,
 }
 
 impl Default for RBAC {
@@ -79,6 +80,7 @@ impl Default for RBAC {
             init: true,
             from_block: 2158939,
             group_id: "c/IMtbTiCQDNM5rPRV3RzNVW052oLqiWpfYMwl0oN/k=".to_string(),
+            permission_id: "Hz6QvvQNX3SgBn26q/HS9etIyS74gC7622JVCBanNT0=".to_string(),
         }
     }
 }
