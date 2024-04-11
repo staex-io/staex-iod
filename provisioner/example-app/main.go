@@ -46,7 +46,11 @@ type WindSpeed struct {
 
 func main() {
 	log.Logger = log.
-		Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).
+		Output(zerolog.ConsoleWriter{
+			Out:        os.Stdout,
+			TimeFormat: time.RFC3339,
+			NoColor:    true,
+		}).
 		With().Caller().Logger().
 		Level(zerolog.TraceLevel)
 

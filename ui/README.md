@@ -2,7 +2,7 @@
 
 ## Build
 
-To build Staex IoD user interface user following commands:
+To build StaexIoD user interface user following commands:
 
 ```shell
 make build

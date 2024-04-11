@@ -9,6 +9,7 @@ pub(crate) struct Config {
     pub(crate) signer: Signer,
     pub(crate) faucet: Faucet,
     pub(crate) device: Device,
+    pub(crate) rbac: RBAC,
     pub(crate) indexer: Indexer,
 }
 
@@ -20,6 +21,7 @@ impl Default for Config {
             signer: Default::default(),
             faucet: Default::default(),
             device: Default::default(),
+            rbac: Default::default(),
             indexer: Indexer::default(),
         }
     }
@@ -63,6 +65,26 @@ impl Default for Device {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[allow(clippy::upper_case_acronyms)]
+pub(crate) struct RBAC {
+    pub(crate) init: bool,
+    pub(crate) from_block: u64,
+    pub(crate) group_id: String,
+    pub(crate) permission_id: String,
+}
+
+impl Default for RBAC {
+    fn default() -> Self {
+        Self {
+            init: true,
+            from_block: 2158939,
+            group_id: "c/IMtbTiCQDNM5rPRV3RzNVW052oLqiWpfYMwl0oN/k=".to_string(),
+            permission_id: "Hz6QvvQNX3SgBn26q/HS9etIyS74gC7622JVCBanNT0=".to_string(),
+        }
+    }
+}
+
 // All fields are required attributes for every device.
 // Only "additional" is additional.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -71,6 +93,7 @@ pub(crate) struct Attributes {
     pub(crate) location: String,
     pub(crate) price_access: f64,
     pub(crate) price_pin: f64,
+    pub(crate) staex_mcc_id: String,
     pub(crate) additional: Option<HashMap<String, toml::Value>>,
 }
 
@@ -81,6 +104,7 @@ impl Default for Attributes {
             location: "40.1949288120072,44.55177253802097".to_string(),
             price_access: 42.03995,
             price_pin: 445.12222,
+            staex_mcc_id: "g5zkjxhge9jqjfvjm1s539xgc7pqt1h9gm59txg1xn4xazfqqbwg".to_string(),
             additional: Some(HashMap::from([
                 ("microcontroller".to_string(), "stm32".into()),
                 ("device_age_in_years".to_string(), 2.into()),

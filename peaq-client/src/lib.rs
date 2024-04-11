@@ -2,7 +2,11 @@ use std::ops::Deref;
 
 use peaq_gen::api::{
     peaq_did,
-    peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
+    peaq_rbac::{
+        self,
+        calls::types::fetch_role::Entity,
+        events::{AllPermissionsFetched, FetchedUserPermissions},
+    },
 };
 use rand::RngCore;
 use subxt::{
@@ -29,6 +33,7 @@ pub use peaq_gen;
 
 pub type Error = Box<dyn std::error::Error>;
 
+#[derive(Clone)]
 pub struct Client {
     api: OnlineClient<PolkadotConfig>,
     rpc: RpcClient,
@@ -181,6 +186,7 @@ impl Client {
     }
 }
 
+#[derive(Clone)]
 pub struct SignerClient {
     client: Client,
     keypair: Keypair,
@@ -219,7 +225,7 @@ impl SignerClient {
         }
     }
 
-    fn address(&self) -> AccountId32 {
+    pub fn address(&self) -> AccountId32 {
         <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
     }
 }
@@ -253,14 +259,13 @@ impl<'a> DID<'a> {
     pub async fn read_attribute<T, F>(
         &self,
         name: &str,
+        address: AccountId32,
         filter: Option<F>,
     ) -> Result<Option<T>, Error>
     where
         F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
     {
-        let call = self
-            .peaq_did_api
-            .read_attribute(self.signer_client.address(), name.as_bytes().to_vec());
+        let call = self.peaq_did_api.read_attribute(address, name.as_bytes().to_vec());
         let tx = self.signer_client.submit_tx(&call).await?;
         match self.client.process_events(tx, filter).await {
             Ok(data) => Ok(data),
@@ -303,9 +308,9 @@ impl<'a> DID<'a> {
     }
 }
 
-pub const ENTITY_ID_LENGTH: usize = 32;
+pub const ENTITY_LENGTH: usize = 32;
 
-pub type RBACRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
+pub type EntityRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
 
 /// RBAC structure contains methods to interact with PEAQ RBAC pallet.
 #[allow(clippy::upper_case_acronyms)]
@@ -317,7 +322,7 @@ pub struct RBAC<'a> {
 
 impl<'a> RBAC<'a> {
     pub async fn add_role(&self, name: String) -> Result<Entity, Error> {
-        let mut role_id = [0u8; ENTITY_ID_LENGTH];
+        let mut role_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut role_id);
         let call = self.peaq_rbac_api.add_role(role_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -325,7 +330,7 @@ impl<'a> RBAC<'a> {
     }
 
     pub async fn add_group(&self, name: String) -> Result<Entity, Error> {
-        let mut group_id = [0u8; ENTITY_ID_LENGTH];
+        let mut group_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut group_id);
         let call = self.peaq_rbac_api.add_group(group_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -333,7 +338,7 @@ impl<'a> RBAC<'a> {
     }
 
     pub async fn add_permission(&self, name: String) -> Result<Entity, Error> {
-        let mut permission_id = [0u8; ENTITY_ID_LENGTH];
+        let mut permission_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut permission_id);
         let call = self.peaq_rbac_api.add_permission(permission_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -374,7 +379,7 @@ impl<'a> RBAC<'a> {
         &self,
         owner: AccountId32,
         user_id: Entity,
-    ) -> Result<Vec<RBACRecord>, Error> {
+    ) -> Result<Vec<EntityRecord>, Error> {
         let call = self.peaq_rbac_api.fetch_user_permissions(owner, user_id);
         let tx = self.signer_client.submit_tx(&call).await?;
         let entities = self
@@ -382,6 +387,17 @@ impl<'a> RBAC<'a> {
             .process_events(tx, Some(filter_fetched_user_permissions))
             .await?
             .ok_or_else(|| "failed to find permission entities for user".to_string())?;
+        Ok(entities)
+    }
+
+    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<EntityRecord>, Error> {
+        let call = self.peaq_rbac_api.fetch_permissions(owner);
+        let tx = self.signer_client.submit_tx(&call).await?;
+        let entities = self
+            .client
+            .process_events(tx, Some(filter_all_permissions_fetched))
+            .await?
+            .ok_or_else(|| "failed to find all permissions for the owner".to_string())?;
         Ok(entities)
     }
 }
@@ -394,9 +410,22 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
     Ok((phrase, keypair, account_id))
 }
 
-fn filter_fetched_user_permissions(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
+fn filter_fetched_user_permissions(
+    event: EventDetails<PolkadotConfig>,
+) -> Option<Vec<EntityRecord>> {
     if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
         if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
+            return Some(evt.0);
+        }
+    }
+    None
+}
+
+fn filter_all_permissions_fetched(
+    event: EventDetails<PolkadotConfig>,
+) -> Option<Vec<EntityRecord>> {
+    if event.variant_name() == peaq_rbac::events::AllPermissionsFetched::EVENT {
+        if let Ok(Some(evt)) = event.as_event::<AllPermissionsFetched>() {
             return Some(evt.0);
         }
     }
@@ -421,6 +450,37 @@ mod tests {
         let token_symbol: String = system_properties.get("tokenSymbol").unwrap().to_string();
         assert_eq!(18, token_decimals);
         assert_eq!("\"AGUNG\"", token_symbol);
+    }
+
+    #[tokio::test]
+    async fn get_latest_block() {
+        let client = Client::new("wss://rpcpc1-qa.agung.peaq.network").await.unwrap();
+        eprintln!("Latest block is {}", client.get_last_block().await.unwrap().block.header.number)
+    }
+
+    #[test]
+    #[ignore = "run it manually to set phrase"]
+    fn get_address_from_phrase() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        eprintln!("Account id {}", account_id)
+    }
+
+    #[tokio::test]
+    #[ignore = "run it manually to set phrase"]
+    async fn get_owner_permissions() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let client =
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+        let permissions = client.rbac().fetch_permissions(account_id).await.unwrap();
+        for permission in permissions {
+            eprintln!("{:?} : {:?}", from_utf8(&permission.name), permission.id);
+        }
     }
 
     #[ignore = "requires manually setup mnemonic phrase"]
