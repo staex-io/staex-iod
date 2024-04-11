@@ -94,6 +94,7 @@ pub(crate) struct Attributes {
     pub(crate) price_access: f64,
     pub(crate) price_pin: f64,
     pub(crate) staex_mcc_id: String,
+    pub(crate) mqtt_topics: Vec<String>,
     pub(crate) additional: Option<HashMap<String, toml::Value>>,
 }
 
@@ -105,6 +106,7 @@ impl Default for Attributes {
             price_access: 42.03995,
             price_pin: 445.12222,
             staex_mcc_id: "g5zkjxhge9jqjfvjm1s539xgc7pqt1h9gm59txg1xn4xazfqqbwg".to_string(),
+            mqtt_topics: vec!["measurements".to_string()],
             additional: Some(HashMap::from([
                 ("microcontroller".to_string(), "stm32".into()),
                 ("device_age_in_years".to_string(), 2.into()),
