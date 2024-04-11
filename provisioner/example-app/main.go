@@ -68,6 +68,7 @@ func main() {
 
 func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 	const serverAddressFlag = "server-address"
+	const mqqtTopicFlag = "mqtt-topic"
 
 	root := &cobra.Command{Use: "weather-gatherer"}
 	server := &cobra.Command{
@@ -90,8 +91,12 @@ func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to get server address flag: %w", err)
 			}
+			mqttTopic, err := cmd.PersistentFlags().GetString(mqqtTopicFlag)
+			if err != nil {
+				return fmt.Errorf("failed to get mqtt topic flag: %w", err)
+			}
 			go func() {
-				if err = startClient(serverAddress, stopC, doneC); err != nil {
+				if err = startClient(serverAddress, mqttTopic, stopC, doneC); err != nil {
 					log.Fatal().Err(err).Msg("failed to process client")
 				}
 			}()
@@ -99,7 +104,10 @@ func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 			return nil
 		},
 	}
-	client.PersistentFlags().StringP(serverAddressFlag, "a", "127.0.0.1:6699", "Set address to connect to MQTT server")
+	client.PersistentFlags().StringP(serverAddressFlag, "sa", "127.0.0.1:6699",
+		"Set address to connect to MQTT server")
+	client.PersistentFlags().StringP(mqqtTopicFlag, "topic", string(TopicMeasurement),
+		"Set MQTT topic to gather information from server")
 	root.AddCommand(server)
 	root.AddCommand(client)
 	return root
@@ -172,7 +180,7 @@ func startServer(stopC, doneC chan struct{}) error {
 	return nil
 }
 
-func startClient(serverAddress string, stopC, doneC chan struct{}) error {
+func startClient(serverAddress, mqttTopic string, stopC, doneC chan struct{}) error {
 	u, err := url.Parse(fmt.Sprintf("mqtt://%s", serverAddress))
 	if err != nil {
 		return fmt.Errorf("failed to parse mqtt url: %w", err)
@@ -196,7 +204,7 @@ func startClient(serverAddress string, stopC, doneC chan struct{}) error {
 	}
 	if _, err := conn.Subscribe(ctx, &paho.Subscribe{
 		Subscriptions: []paho.SubscribeOptions{{
-			Topic: string(TopicMeasurement),
+			Topic: mqttTopic,
 		}},
 	}); err != nil {
 		return fmt.Errorf("failed to subscribe for a topic: %w", err)
