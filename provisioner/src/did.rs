@@ -12,9 +12,14 @@ use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
 use crate::{config, Error};
 
+// Key to store information about IoT device.
 pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
+// Key to store information about client.
 pub(crate) const CLIENT_INFO_ATTRIBUTE_NAME: &str = "staex-iod-client";
 
+// SyncState represent on-chain DID state.
+// We need to compare local DID information with on-chain
+// and decide what to do.
 enum SyncState {
     Ok,
     Outdated,
