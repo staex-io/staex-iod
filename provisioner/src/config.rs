@@ -6,8 +6,10 @@ use log::Level;
 pub(crate) struct Config {
     pub(crate) log_level: String,
     pub(crate) rpc_url: String,
+    // We use signer in PEAQ SignerClient to sign transactions.
     pub(crate) signer: Signer,
     pub(crate) faucet: Faucet,
+    // Device represents on-chain DID information and sync options.
     pub(crate) device: Device,
     pub(crate) rbac: RBAC,
     pub(crate) indexer: Indexer,
@@ -51,6 +53,8 @@ impl Default for Signer {
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub(crate) struct Device {
     pub(crate) sync: bool,
+    // Force update on-chain DID.
+    // It disables comparison on sync.
     pub(crate) force: bool,
     pub(crate) attributes: Attributes,
 }
@@ -68,9 +72,12 @@ impl Default for Device {
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) struct RBAC {
+    // Disable RBAC init on start.
     pub(crate) init: bool,
     pub(crate) from_block: u64,
+    // Entity id as a base64 string.
     pub(crate) group_id: String,
+    // Entity id as a base64 string.
     pub(crate) permission_id: String,
 }
 

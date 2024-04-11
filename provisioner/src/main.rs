@@ -1,17 +1,9 @@
-use std::{collections::HashMap, str::FromStr, time::Duration};
+use std::{str::FromStr, time::Duration};
 
-use base64::{prelude::BASE64_STANDARD, Engine};
 use clap::{Parser, Subcommand};
-use log::{debug, error, info, trace, warn, Level, LevelFilter};
-use peaq_client::{generate_account, peaq_gen::api::peaq_did::events::AttributeRead};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use subxt::{
-    config::Header,
-    events::{EventDetails, StaticEvent},
-    tx::Signer,
-    utils::AccountId32,
-    PolkadotConfig,
-};
+use log::{debug, error, info, Level, LevelFilter};
+use peaq_client::generate_account;
+use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
 use subxt_signer::{
     bip39::{self, Mnemonic},
     sr25519::Keypair,
@@ -26,59 +18,13 @@ use crate::config::Config;
 
 mod child_process;
 mod config;
+mod did;
 mod example_app;
 mod indexer;
 mod rbac;
 mod staex_mcc;
 
-const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
-pub(crate) const CLIENT_INFO_ATTRIBUTE_NAME: &str = "staex-iod-client";
-
 pub(crate) type Error = Box<dyn std::error::Error>;
-
-enum SyncState {
-    Ok,
-    Outdated,
-    NotCreated,
-}
-
-pub(crate) const V1: &str = "v1";
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub(crate) enum Device {
-    V1(DeviceV1),
-}
-
-impl Device {
-    pub(crate) fn version(&self) -> &str {
-        match self {
-            Device::V1(_) => V1,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub(crate) struct DeviceV1 {
-    data_type: String,
-    location: String,
-    price_access: f64,
-    price_pin: f64,
-    staex_mcc_id: String,
-    mqtt_topics: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    additional: Option<HashMap<String, toml::Value>>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub(crate) struct ClientInfo {
-    pub(crate) staex_mcc_id: String,
-}
-
-enum ReadResult<T> {
-    Ok(T),
-    DecodeError,
-}
 
 /// Command line utility to interact with StaexIoD provisioner.
 #[derive(Parser)]
@@ -140,13 +86,7 @@ async fn main() -> Result<(), Error> {
         Commands::UpdateClient {
             phrase,
             staex_mcc_id,
-        } => {
-            let keypair = Keypair::from_phrase(&phrase, None)?;
-            let peaq_client = peaq_client::SignerClient::new(&cli.rpc_url, keypair).await?;
-            let value = serde_json::to_vec(&ClientInfo { staex_mcc_id })?;
-            peaq_client.did().add_attribute(CLIENT_INFO_ATTRIBUTE_NAME, value).await?;
-            return Ok(());
-        }
+        } => return did::update_client_info(&cli.rpc_url, &phrase, staex_mcc_id).await,
         _ => (),
     }
     let cfg: config::Config = || -> Result<config::Config, Error> {
@@ -192,11 +132,11 @@ async fn main() -> Result<(), Error> {
         }
         Commands::GrantAccess { address } => {
             let app: App = App::new(cfg).await?;
-            app.grant_access(address).await?;
+            rbac::grant_access(&app.peaq_client, address, &app.cfg.rbac.group_id).await?;
         }
         Commands::SelfRemove {} => {
             let app: App = App::new(cfg).await?;
-            app.self_remove().await?;
+            did::self_remove(app.peaq_client).await?;
         }
         Commands::Faucet { address } => {
             let app: App = App::new(cfg).await?;
@@ -220,57 +160,12 @@ impl App {
     }
 
     async fn run(&self, stop_r: watch::Receiver<()>) -> Result<(), Error> {
-        self.sync_did().await?;
+        did::sync_did(&self.cfg.device, &self.peaq_client).await?;
         info!("device is synchronize");
         rbac::init_rbac(&self.cfg.rbac, &self.peaq_client).await?;
         info!("rbac is initialized");
         info!("starting staex mcc and example app");
         self.start(stop_r).await
-    }
-
-    async fn sync_did(&self) -> Result<(), Error> {
-        if !self.cfg.device.sync {
-            return Ok(());
-        }
-        let last_block = self.peaq_client.get_last_block().await?;
-        info!(
-            "starting to get on-chain device information starting from {} block",
-            last_block.block.header.number()
-        );
-        let read_result: Option<ReadResult<Device>> = self
-            .peaq_client
-            .did()
-            .read_attribute::<ReadResult<Device>, _>(
-                DEVICE_ATTRIBUTE_NAME,
-                self.peaq_client.address().clone(),
-                Some(read_attribute_filter),
-            )
-            .await?;
-        let sync_state = get_sync_state(read_result, &self.cfg.device);
-        match sync_state {
-            SyncState::Ok => {
-                info!("on-chain device is up to date");
-                if self.cfg.device.force {
-                    warn!("force sync is enabled; starting to sync it");
-                    let value = self.prepare_device()?;
-                    self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
-                    info!("successfully updated on-chain device");
-                }
-            }
-            SyncState::Outdated => {
-                info!("on-chain device is outdated; starting to sync it");
-                let value = self.prepare_device()?;
-                self.peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
-                info!("successfully updated on-chain device");
-            }
-            SyncState::NotCreated => {
-                info!("on-chain device is not created");
-                let value = self.prepare_device()?;
-                self.peaq_client.did().add_attribute(DEVICE_ATTRIBUTE_NAME, value).await?;
-                info!("successfully created on-chain device");
-            }
-        }
-        Ok(())
     }
 
     async fn start(&self, stop_r: watch::Receiver<()>) -> Result<(), Error> {
@@ -313,86 +208,6 @@ impl App {
         info!("address balance after: {}", balance);
         Ok(())
     }
-
-    async fn grant_access(&self, address: AccountId32) -> Result<(), Error> {
-        let group_id = BASE64_STANDARD.decode(&self.cfg.rbac.group_id)?;
-        let group_id = vec_to_bytes(group_id)?;
-        trace!("address array is {:?}", address.0);
-        trace!("group id array is {:?}", group_id);
-        self.peaq_client.rbac().assign_user_to_group(address.0, group_id).await
-    }
-
-    async fn self_remove(&self) -> Result<(), Error> {
-        info!("starting to do self-remove");
-        self.peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await
-    }
-
-    fn prepare_device(&self) -> Result<Vec<u8>, Error> {
-        let device = Device::V1(DeviceV1 {
-            data_type: self.cfg.device.attributes.data_type.clone(),
-            location: self.cfg.device.attributes.location.clone(),
-            price_pin: self.cfg.device.attributes.price_pin,
-            price_access: self.cfg.device.attributes.price_access,
-            staex_mcc_id: self.cfg.device.attributes.staex_mcc_id.clone(),
-            mqtt_topics: self.cfg.device.attributes.mqtt_topics.clone(),
-            additional: self.cfg.device.attributes.additional.clone(),
-        });
-        let value = serde_json::to_vec(&device)?;
-        Ok(value)
-    }
-}
-
-pub(crate) fn read_attribute_filter<T>(event: EventDetails<PolkadotConfig>) -> Option<ReadResult<T>>
-where
-    T: DeserializeOwned,
-{
-    if event.variant_name() == AttributeRead::EVENT {
-        if let Ok(Some(evt)) = event.as_event::<AttributeRead>() {
-            match serde_json::from_slice(&evt.0.value) {
-                Ok(data) => return Some(ReadResult::Ok(data)),
-                Err(e) => {
-                    // Looks like we have outdated format.
-                    warn!("failed to decode on-chain attribute: {}", e);
-                    return Some(ReadResult::DecodeError);
-                }
-            }
-        }
-    }
-    None
-}
-
-fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
-    match cfg.typ {
-        config::SignerType::Phrase => {
-            Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
-        }
-        config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
-    }
-}
-
-fn get_sync_state(read_result: Option<ReadResult<Device>>, expected: &config::Device) -> SyncState {
-    if read_result.is_none() {
-        return SyncState::NotCreated;
-    }
-    let read_result = read_result.unwrap();
-    match read_result {
-        ReadResult::DecodeError => SyncState::Outdated,
-        ReadResult::Ok(device) => match device {
-            Device::V1(device) => {
-                if device.data_type != expected.attributes.data_type
-                    || device.location != expected.attributes.location
-                    || device.price_access != expected.attributes.price_access
-                    || device.price_pin != expected.attributes.price_pin
-                    || device.staex_mcc_id != expected.attributes.staex_mcc_id
-                    || device.mqtt_topics != expected.attributes.mqtt_topics
-                {
-                    SyncState::Outdated
-                } else {
-                    SyncState::Ok
-                }
-            }
-        },
-    }
 }
 
 pub(crate) fn vec_to_bytes<T, const N: usize>(v: Vec<T>) -> Result<[T; N], Error> {
@@ -403,4 +218,13 @@ pub(crate) fn vec_to_bytes<T, const N: usize>(v: Vec<T>) -> Result<[T; N], Error
             N
         )
     })?)
+}
+
+fn get_keypair(cfg: &config::Signer) -> Result<Keypair, Error> {
+    match cfg.typ {
+        config::SignerType::Phrase => {
+            Ok(Keypair::from_phrase(&bip39::Mnemonic::from_str(&cfg.val)?, None)?)
+        }
+        config::SignerType::SecretUri => Ok(Keypair::from_uri(&SecretUri::from_str(&cfg.val)?)?),
+    }
 }
