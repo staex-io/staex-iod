@@ -1,4 +1,4 @@
-# Staex IoD
+# StaexIoD
 
 Staex Internet of Data.
 

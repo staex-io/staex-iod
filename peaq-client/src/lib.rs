@@ -308,9 +308,9 @@ impl<'a> DID<'a> {
     }
 }
 
-pub const ENTITY_ID_LENGTH: usize = 32;
+pub const ENTITY_LENGTH: usize = 32;
 
-pub type RBACRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
+pub type EntityRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
 
 /// RBAC structure contains methods to interact with PEAQ RBAC pallet.
 #[allow(clippy::upper_case_acronyms)]
@@ -322,7 +322,7 @@ pub struct RBAC<'a> {
 
 impl<'a> RBAC<'a> {
     pub async fn add_role(&self, name: String) -> Result<Entity, Error> {
-        let mut role_id = [0u8; ENTITY_ID_LENGTH];
+        let mut role_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut role_id);
         let call = self.peaq_rbac_api.add_role(role_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -330,7 +330,7 @@ impl<'a> RBAC<'a> {
     }
 
     pub async fn add_group(&self, name: String) -> Result<Entity, Error> {
-        let mut group_id = [0u8; ENTITY_ID_LENGTH];
+        let mut group_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut group_id);
         let call = self.peaq_rbac_api.add_group(group_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -338,7 +338,7 @@ impl<'a> RBAC<'a> {
     }
 
     pub async fn add_permission(&self, name: String) -> Result<Entity, Error> {
-        let mut permission_id = [0u8; ENTITY_ID_LENGTH];
+        let mut permission_id = [0u8; ENTITY_LENGTH];
         rand::thread_rng().fill_bytes(&mut permission_id);
         let call = self.peaq_rbac_api.add_permission(permission_id, name.into_bytes());
         self.signer_client.submit_tx(&call).await?;
@@ -379,7 +379,7 @@ impl<'a> RBAC<'a> {
         &self,
         owner: AccountId32,
         user_id: Entity,
-    ) -> Result<Vec<RBACRecord>, Error> {
+    ) -> Result<Vec<EntityRecord>, Error> {
         let call = self.peaq_rbac_api.fetch_user_permissions(owner, user_id);
         let tx = self.signer_client.submit_tx(&call).await?;
         let entities = self
@@ -390,7 +390,7 @@ impl<'a> RBAC<'a> {
         Ok(entities)
     }
 
-    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<RBACRecord>, Error> {
+    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<EntityRecord>, Error> {
         let call = self.peaq_rbac_api.fetch_permissions(owner);
         let tx = self.signer_client.submit_tx(&call).await?;
         let entities = self
@@ -410,7 +410,9 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
     Ok((phrase, keypair, account_id))
 }
 
-fn filter_fetched_user_permissions(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
+fn filter_fetched_user_permissions(
+    event: EventDetails<PolkadotConfig>,
+) -> Option<Vec<EntityRecord>> {
     if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
         if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
             return Some(evt.0);
@@ -419,7 +421,9 @@ fn filter_fetched_user_permissions(event: EventDetails<PolkadotConfig>) -> Optio
     None
 }
 
-fn filter_all_permissions_fetched(event: EventDetails<PolkadotConfig>) -> Option<Vec<RBACRecord>> {
+fn filter_all_permissions_fetched(
+    event: EventDetails<PolkadotConfig>,
+) -> Option<Vec<EntityRecord>> {
     if event.variant_name() == peaq_rbac::events::AllPermissionsFetched::EVENT {
         if let Ok(Some(evt)) = event.as_event::<AllPermissionsFetched>() {
             return Some(evt.0);

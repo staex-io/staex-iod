@@ -31,7 +31,7 @@ mod indexer;
 mod rbac;
 mod staex_mcc;
 
-pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
+const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
 pub(crate) const CLIENT_INFO_ATTRIBUTE_NAME: &str = "staex-iod-client";
 
 pub(crate) type Error = Box<dyn std::error::Error>;
@@ -74,12 +74,12 @@ pub(crate) struct ClientInfo {
     pub(crate) staex_mcc_id: String,
 }
 
-pub(crate) enum ReadResult<T> {
+enum ReadResult<T> {
     Ok(T),
     DecodeError,
 }
 
-/// Command line utility to interact with Staex IoD provisioner.
+/// Command line utility to interact with StaexIoD provisioner.
 #[derive(Parser)]
 #[clap(name = "provisioner")]
 #[command(author, version, about, long_about = None)]

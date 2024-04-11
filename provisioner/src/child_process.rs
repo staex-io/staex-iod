@@ -30,8 +30,6 @@ impl ChildProcess {
         args: &[&str],
         status_s: watch::Sender<Status>,
     ) -> Result<Self, Error> {
-        let mut cmd = Command::new(cmd);
-
         let start_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
         if let Err(e) = fs::create_dir_all(LOGS_DIR) {
             match e.kind() {
@@ -41,19 +39,18 @@ impl ChildProcess {
         };
         let stdout_file = fs::File::create_new(format!("{}/{}.stdout.txt", LOGS_DIR, start_time))?;
         let stderr_file = fs::File::create_new(format!("{}/{}.stderr.txt", LOGS_DIR, start_time))?;
+
+        let mut cmd = Command::new(cmd);
         cmd.stdout::<Stdio>(stdout_file.into());
         cmd.stderr::<Stdio>(stderr_file.into());
-
         let child = cmd.args(args).kill_on_drop(true).spawn()?;
 
         let (kill_s, kill_r) = oneshot::channel::<()>();
-
         tokio::spawn(async move {
             if let Err(e) = Self::wait(child, start_time, status_s, kill_r).await {
                 error!("failed to wait for child process: {start_time}: {e}")
             }
         });
-
         Ok(Self { kill_s })
     }
 

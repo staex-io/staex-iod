@@ -6,7 +6,7 @@ use std::{
 use base64::{prelude::BASE64_STANDARD, Engine};
 use log::{debug, error, info, trace};
 use peaq_client::{
-    peaq_gen::api::peaq_rbac::events::UserAssignedToGroup, SignerClient, ENTITY_ID_LENGTH,
+    peaq_gen::api::peaq_rbac::events::UserAssignedToGroup, SignerClient, ENTITY_LENGTH,
 };
 use subxt::utils::AccountId32;
 use tokio::{
@@ -106,8 +106,8 @@ pub(crate) async fn sync_rbac(
 
 async fn fetch_rbac(
     peaq_client: SignerClient,
-    group_id: [u8; ENTITY_ID_LENGTH],
-    permission_id: [u8; ENTITY_ID_LENGTH],
+    group_id: [u8; ENTITY_LENGTH],
+    permission_id: [u8; ENTITY_LENGTH],
     last_processed_block: u64,
     restart_s: mpsc::Sender<()>,
 ) -> Result<(), Error> {
@@ -130,7 +130,7 @@ async fn fetch_rbac(
 async fn check_user(
     address: AccountId32,
     peaq_client: &SignerClient,
-    permission_id: &[u8; ENTITY_ID_LENGTH],
+    permission_id: &[u8; ENTITY_LENGTH],
     restart_s: &mpsc::Sender<()>,
 ) -> Result<(), Error> {
     info!("starting to get on-chain did to get staex mcc id");
