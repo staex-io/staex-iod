@@ -79,6 +79,11 @@ impl ChildProcess {
     }
 }
 
+pub(crate) async fn wait_status(mut status_r: watch::Receiver<Status>) -> Result<Status, String> {
+    status_r.changed().await.map_err(|e| e.to_string())?;
+    Ok(*status_r.borrow())
+}
+
 async fn kill_child(
     mut child: Child,
     start_time: u128,
@@ -108,11 +113,6 @@ fn process_status(
         })
         .map_err(|_| "failed to send result status".to_string())?;
     Ok(())
-}
-
-pub(crate) async fn wait_status(mut status_r: watch::Receiver<Status>) -> Result<Status, String> {
-    status_r.changed().await.map_err(|e| e.to_string())?;
-    Ok(*status_r.borrow())
 }
 
 #[cfg(test)]

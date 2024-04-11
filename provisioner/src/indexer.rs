@@ -27,7 +27,8 @@ use tokio::sync::Mutex;
 
 use crate::{
     config::{self, Config},
-    Device, Error, DEVICE_ATTRIBUTE_NAME, V1,
+    did::{Device, DEVICE_ATTRIBUTE_NAME, V1},
+    Error,
 };
 
 pub(crate) async fn run(cfg: Config) -> Result<(), Error> {

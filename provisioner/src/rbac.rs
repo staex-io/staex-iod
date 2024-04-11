@@ -14,10 +14,7 @@ use tokio::{
     time::{sleep, timeout},
 };
 
-use crate::{
-    config, read_attribute_filter, vec_to_bytes, ClientInfo, Error, ReadResult,
-    CLIENT_INFO_ATTRIBUTE_NAME,
-};
+use crate::{config, did, vec_to_bytes, Error};
 
 const PERMISSION_NAME: &str = "staex_iod_mqtt_access";
 const ROLE_NAME: &str = "staex_iod_accessor";
@@ -104,6 +101,18 @@ pub(crate) async fn sync_rbac(
     }
 }
 
+pub(crate) async fn grant_access(
+    peaq_client: &SignerClient,
+    address: AccountId32,
+    group_id: &String,
+) -> Result<(), Error> {
+    let group_id = BASE64_STANDARD.decode(group_id)?;
+    let group_id = vec_to_bytes(group_id)?;
+    trace!("address array is {:?}", address.0);
+    trace!("group id array is {:?}", group_id);
+    peaq_client.rbac().assign_user_to_group(address.0, group_id).await
+}
+
 async fn fetch_rbac(
     peaq_client: SignerClient,
     group_id: [u8; ENTITY_LENGTH],
@@ -121,34 +130,20 @@ async fn fetch_rbac(
         if event.0 == peaq_client.address() && event.2 == group_id {
             let address = AccountId32::from(event.1);
             info!("received new access for {}", address);
-            check_user(address, &peaq_client, &permission_id, &restart_s).await?;
+            check_user(&peaq_client, address, &permission_id, &restart_s).await?;
         }
     }
     Ok(())
 }
 
 async fn check_user(
-    address: AccountId32,
     peaq_client: &SignerClient,
+    address: AccountId32,
     permission_id: &[u8; ENTITY_LENGTH],
     restart_s: &mpsc::Sender<()>,
 ) -> Result<(), Error> {
     info!("starting to get on-chain did to get staex mcc id");
-    let client_info = match peaq_client
-        .did()
-        .read_attribute::<ReadResult<ClientInfo>, _>(
-            CLIENT_INFO_ATTRIBUTE_NAME,
-            address.clone(),
-            Some(read_attribute_filter),
-        )
-        .await?
-        .ok_or("on-chain client attributes are empty")?
-    {
-        ReadResult::Ok(client) => client,
-        ReadResult::DecodeError => {
-            return Err("failed to decode on-chain result with client did attributes".into())
-        }
-    };
+    let client_info = did::get_client_info(peaq_client, address.clone()).await?;
     debug!("client staex mcc id is {} for address {address}", client_info.staex_mcc_id);
 
     info!("starting to fetch on-chain user permissions to double check");
