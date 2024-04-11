@@ -31,7 +31,7 @@ pub(crate) async fn init_rbac(cfg: &config::RBAC, peaq_client: &SignerClient) ->
         debug!("rbac initialization skipped because of config");
         return Ok(());
     }
-    info!("starting to initialize rbac entities, wait some...");
+    info!("starting to initialize rbac entities, wait some minutes...");
     let rbac_client = peaq_client.rbac();
     debug!("starting to add permission");
     let permission_id = rbac_client.add_permission(PERMISSION_NAME.to_string()).await.unwrap();
@@ -130,13 +130,13 @@ async fn fetch_rbac(
         if event.0 == peaq_client.address() && event.2 == group_id {
             let address = AccountId32::from(event.1);
             info!("received new access for {}", address);
-            check_user(&peaq_client, address, &permission_id, &restart_s).await?;
+            process_user(&peaq_client, address, &permission_id, &restart_s).await?;
         }
     }
     Ok(())
 }
 
-async fn check_user(
+async fn process_user(
     peaq_client: &SignerClient,
     address: AccountId32,
     permission_id: &[u8; ENTITY_LENGTH],
