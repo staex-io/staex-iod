@@ -65,6 +65,7 @@ pub(crate) struct DeviceV1 {
     price_access: f64,
     price_pin: f64,
     staex_mcc_id: String,
+    mqtt_topics: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     additional: Option<HashMap<String, toml::Value>>,
 }
@@ -333,6 +334,7 @@ impl App {
             price_pin: self.cfg.device.attributes.price_pin,
             price_access: self.cfg.device.attributes.price_access,
             staex_mcc_id: self.cfg.device.attributes.staex_mcc_id.clone(),
+            mqtt_topics: self.cfg.device.attributes.mqtt_topics.clone(),
             additional: self.cfg.device.attributes.additional.clone(),
         });
         let value = serde_json::to_vec(&device)?;
@@ -382,6 +384,7 @@ fn get_sync_state(read_result: Option<ReadResult<Device>>, expected: &config::De
                     || device.price_access != expected.attributes.price_access
                     || device.price_pin != expected.attributes.price_pin
                     || device.staex_mcc_id != expected.attributes.staex_mcc_id
+                    || device.mqtt_topics != expected.attributes.mqtt_topics
                 {
                     SyncState::Outdated
                 } else {
