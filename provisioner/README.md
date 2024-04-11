@@ -8,10 +8,38 @@ cargo run -- --help
 
 ### To run provisioner
 
-Because StaexMCC is running through systemctl we need sudo:
+First, you need to install StaexMCC using this [quick start](https://docs.staex.io/how-to-guides/quick-start/).
+
+Because StaexMCC is running through systemctl we need to build binary and run it with sudo:
 
 ```shell
+# Working directory is "/staex-iod/provisioner".
 cargo build && sudo ../target/debug/provisioner run
+```
+
+Don't forget to setup config file with your private key and other information before. After that you need to wait some minutes while device will be synchronized with on-chain DID and RBAC module will be initialized on-chain.
+
+After that if you have prepared client, you can grant an access:
+
+```shell
+cargo run -- grant-access <address>
+```
+
+Otherwise setup client and come back to access granting.
+
+### Connect to provisioner
+
+To connect to provisioner's MQTT server you need to have a StaexMCC at the client and setup client information to store it on-chain.
+
+```shell
+cargo run -- update-client <phrase> <StaexMCC-id>
+```
+
+After that you can try to connect to the MQTT server:
+
+```shell
+# Working directory is "/staex-iod/provisioner/example-app".
+go run main.go client -a <server-address> -t <topic>
 ```
 
 ### Example config file

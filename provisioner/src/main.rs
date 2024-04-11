@@ -59,7 +59,7 @@ enum Commands {
         address: AccountId32,
     },
     /// Update client DID attributes.
-    /// This command can be used to map StaexMCC Id with PEAQ address.
+    /// This command can be used to map StaexMCC id with PEAQ address.
     UpdateClient {
         /// Secret phrase.
         phrase: Mnemonic,
