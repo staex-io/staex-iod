@@ -67,6 +67,14 @@ export default {
         <span class="card-field-label">Price to pin data</span>
         <span class="card-field-value">{{ device.device.price_pin }}</span>
       </div>
+      <div class="card-field">
+        <span class="card-field-label">StaexMCC identifier</span>
+        <span class="card-field-value">{{ device.device.staex_mcc_id }}</span>
+      </div>
+      <div class="card-field">
+        <span class="card-field-label">MQTT topics</span>
+        <span class="card-field-value">{{ device.device.mqtt_topics }}</span>
+      </div>
       <hr />
       <div class="card-field">
         <div class="h-scroll-container">

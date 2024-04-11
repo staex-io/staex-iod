@@ -4,7 +4,7 @@ use std::{
 };
 
 use base64::{prelude::BASE64_STANDARD, Engine};
-use log::{debug, error, info, trace};
+use log::{debug, error, info, trace, warn};
 use peaq_client::{
     peaq_gen::api::peaq_rbac::events::UserAssignedToGroup, SignerClient, ENTITY_LENGTH,
 };
@@ -35,10 +35,12 @@ pub(crate) async fn init_rbac(cfg: &config::RBAC, peaq_client: &SignerClient) ->
     let rbac_client = peaq_client.rbac();
     debug!("starting to add permission");
     let permission_id = rbac_client.add_permission(PERMISSION_NAME.to_string()).await.unwrap();
+    debug!("permission is created: {}", BASE64_STANDARD.encode(permission_id));
     debug!("starting to add role");
     let role_id = rbac_client.add_role(ROLE_NAME.to_string()).await.unwrap();
     debug!("starting to add group");
     let group_id = rbac_client.add_group(GROUP_NAME.to_string()).await.unwrap();
+    debug!("group is created: {}", BASE64_STANDARD.encode(group_id));
     debug!("starting to assign permission to role");
     rbac_client.assign_permission_to_role(permission_id, role_id).await.unwrap();
     debug!("starting to assign role to group");
@@ -79,7 +81,7 @@ pub(crate) async fn sync_rbac(
                         ).await {
                     Ok(res) => {
                         if let Err(e) = res {
-                            error!("failed to sync rbac: {e}");
+                            warn!("failed to sync rbac: {e}");
                             sleep_duration = SLEEP_DURATION_ON_ERROR;
                             continue;
                         }
@@ -111,6 +113,18 @@ pub(crate) async fn grant_access(
     trace!("address array is {:?}", address.0);
     trace!("group id array is {:?}", group_id);
     peaq_client.rbac().assign_user_to_group(address.0, group_id).await
+}
+
+pub(crate) async fn revoke_access(
+    peaq_client: &SignerClient,
+    address: AccountId32,
+    group_id: &String,
+) -> Result<(), Error> {
+    let group_id = BASE64_STANDARD.decode(group_id)?;
+    let group_id = vec_to_bytes(group_id)?;
+    trace!("address array is {:?}", address.0);
+    trace!("group id array is {:?}", group_id);
+    peaq_client.rbac().unassign_user_from_group(address.0, group_id).await
 }
 
 async fn fetch_rbac(
@@ -161,7 +175,7 @@ async fn process_user(
         }
     }
     if !found {
-        debug!("actual permission is not found for the address: {address}");
+        warn!("actual permission is not found for the address: {address}");
         return Ok(());
     }
 

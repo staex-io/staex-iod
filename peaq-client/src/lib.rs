@@ -375,6 +375,16 @@ impl<'a> RBAC<'a> {
         Ok(())
     }
 
+    pub async fn unassign_user_from_group(
+        &self,
+        user_id: Entity,
+        group_id: Entity,
+    ) -> Result<(), Error> {
+        let call = self.peaq_rbac_api.unassign_user_to_group(user_id, group_id);
+        self.signer_client.submit_tx(&call).await?;
+        Ok(())
+    }
+
     pub async fn fetch_user_permissions(
         &self,
         owner: AccountId32,

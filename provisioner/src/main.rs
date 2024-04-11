@@ -58,6 +58,11 @@ enum Commands {
         /// User address.
         address: AccountId32,
     },
+    /// Revoke access.
+    RevokeAccess {
+        /// User address.
+        address: AccountId32,
+    },
     /// Update client DID attributes.
     /// This command can be used to map StaexMCC id with PEAQ address.
     UpdateClient {
@@ -133,6 +138,10 @@ async fn main() -> Result<(), Error> {
         Commands::GrantAccess { address } => {
             let app: App = App::new(cfg).await?;
             rbac::grant_access(&app.peaq_client, address, &app.cfg.rbac.group_id).await?;
+        }
+        Commands::RevokeAccess { address } => {
+            let app: App = App::new(cfg).await?;
+            rbac::revoke_access(&app.peaq_client, address, &app.cfg.rbac.group_id).await?;
         }
         Commands::SelfRemove {} => {
             let app: App = App::new(cfg).await?;

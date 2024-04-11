@@ -25,7 +25,7 @@ import (
 type Topic string
 
 const (
-	TopicMeasurement Topic = "measurement"
+	TopicMeasurement Topic = "measurements"
 )
 
 type DataType string

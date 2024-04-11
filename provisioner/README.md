@@ -17,6 +17,8 @@ Because StaexMCC is running through systemctl we need to build binary and run it
 cargo build && sudo ../target/debug/provisioner run
 ```
 
+After first run you can see in logs you group id in base64 and permission id in base 64. You need to copy this to your config file and restart provisioner. These fields are required to grant and check access to users.
+
 Don't forget to setup config file with your private key and other information before. After that you need to wait some minutes while device will be synchronized with on-chain DID and RBAC module will be initialized on-chain.
 
 After that if you have prepared client, you can grant an access:
