@@ -145,7 +145,7 @@ export default {
           <td class="mouse-pointer" @click="() => goToDevicePage(address)">
             {{ address.slice(0, 4) + '..' + address.slice(44, 48) }}
           </td>
-          <td>{{ data_type.slice(0, 10) }}</td>
+          <td>{{ data_type }}</td>
           <td>
             <a :href="`https://www.google.com/maps/place/${location}`" target="_blank">{{
               location
