@@ -104,9 +104,9 @@ func initCommands(stopC, doneC chan struct{}) *cobra.Command {
 			return nil
 		},
 	}
-	client.PersistentFlags().StringP(serverAddressFlag, "sa", "127.0.0.1:6699",
+	client.PersistentFlags().StringP(serverAddressFlag, "a", "127.0.0.1:6699",
 		"Set address to connect to MQTT server")
-	client.PersistentFlags().StringP(mqqtTopicFlag, "topic", string(TopicMeasurement),
+	client.PersistentFlags().StringP(mqqtTopicFlag, "t", string(TopicMeasurement),
 		"Set MQTT topic to gather information from server")
 	root.AddCommand(server)
 	root.AddCommand(client)
