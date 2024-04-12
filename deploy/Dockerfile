@@ -1,7 +1,6 @@
-FROM rust:1.76-alpine3.19 as builder
+FROM rust:1.77.2-alpine3.19 as builder
 RUN apk add --update alpine-sdk
 WORKDIR /build
-COPY ./contracts /build/contracts
 COPY ./peaq-client /build/peaq-client
 COPY ./peaq-gen /build/peaq-gen
 COPY ./provisioner /build/provisioner
