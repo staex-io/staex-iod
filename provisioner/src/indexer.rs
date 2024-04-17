@@ -69,10 +69,11 @@ impl Indexer {
             trace!("current latest block is: {}", latest_block.block.header.number);
         }
         let mut current_block_index: u64 = from_block;
-        let mut workers: usize = 25;
+        let mut workers: usize = 250;
         loop {
             let saved_current_block_index = current_block_index;
             let saved_workers = workers;
+            debug!("current block to sync is {current_block_index}; workers = {workers}");
             match self.process(&mut current_block_index, workers).await {
                 Ok(no_more_events) => {
                     if no_more_events {
@@ -82,13 +83,14 @@ impl Indexer {
                             workers = 1;
                         }
                         trace!("indexer synced all blocks; waiting for new; current workers count is {workers}");
-                        sleep(Duration::from_secs(3)).await;
+                        sleep(Duration::from_secs(10)).await;
                     }
                 }
                 Err(e) => {
                     error!("failed to process starting from {saved_current_block_index}: {e}");
                     current_block_index = saved_current_block_index;
                     workers = saved_workers;
+                    sleep(Duration::from_secs(10)).await;
                 }
             }
         }
@@ -163,8 +165,7 @@ impl Indexer {
     }
 
     async fn process_events(&self, events: Events<PolkadotConfig>) -> Result<(), Error> {
-        for event in events.iter() {
-            let event = event?;
+        for event in events.iter().flatten() {
             self.process_event(event).await?;
         }
         Ok(())
