@@ -31,7 +31,25 @@ use subxt_signer::sr25519::Keypair;
 
 pub use peaq_gen;
 
-pub type Error = Box<dyn std::error::Error>;
+// We need custom error here to use it across threads.
+#[derive(Debug)]
+pub struct Error {
+    _inner: String,
+}
+
+impl From<Error> for Box<dyn std::error::Error> {
+    fn from(value: Error) -> Self {
+        value._inner.into()
+    }
+}
+
+impl<T: ToString> From<T> for Error {
+    fn from(value: T) -> Self {
+        Self {
+            _inner: value.to_string(),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct Client {

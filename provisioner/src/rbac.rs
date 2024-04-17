@@ -112,7 +112,7 @@ pub(crate) async fn grant_access(
     let group_id = vec_to_bytes(group_id)?;
     trace!("address array is {:?}", address.0);
     trace!("group id array is {:?}", group_id);
-    peaq_client.rbac().assign_user_to_group(address.0, group_id).await
+    Ok(peaq_client.rbac().assign_user_to_group(address.0, group_id).await?)
 }
 
 pub(crate) async fn revoke_access(
@@ -124,7 +124,7 @@ pub(crate) async fn revoke_access(
     let group_id = vec_to_bytes(group_id)?;
     trace!("address array is {:?}", address.0);
     trace!("group id array is {:?}", group_id);
-    peaq_client.rbac().unassign_user_from_group(address.0, group_id).await
+    Ok(peaq_client.rbac().unassign_user_from_group(address.0, group_id).await?)
 }
 
 async fn fetch_rbac(
