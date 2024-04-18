@@ -112,17 +112,12 @@ impl Indexer {
                 // and we need to wait for it.
                 None => return Ok(true),
             };
-            self.process_events(events).await.map_err(|e| e.to_string())?;
+            for event in events.iter().flatten() {
+                self.process_event(event).await.map_err(|e| e.to_string())?;
+            }
         }
 
         Ok(false)
-    }
-
-    async fn process_events(&self, events: Events<PolkadotConfig>) -> Result<(), Error> {
-        for event in events.iter().flatten() {
-            self.process_event(event).await?;
-        }
-        Ok(())
     }
 
     async fn process_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
