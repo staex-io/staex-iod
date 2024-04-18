@@ -125,7 +125,7 @@ pub(crate) async fn sync_did(
 
 pub(crate) async fn self_remove(peaq_client: SignerClient) -> Result<(), Error> {
     info!("starting to do self-remove");
-    peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await
+    Ok(peaq_client.did().remove_attribute(DEVICE_ATTRIBUTE_NAME).await?)
 }
 
 pub(crate) async fn get_client_info(

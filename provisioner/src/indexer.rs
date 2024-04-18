@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     fs::OpenOptions,
     io::ErrorKind,
     sync::Arc,
@@ -20,10 +21,13 @@ use peaq_client::{
 use serde::{Deserialize, Serialize};
 use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{
-    events::{EventDetails, StaticEvent},
+    events::{EventDetails, Events, StaticEvent},
     PolkadotConfig,
 };
-use tokio::sync::Mutex;
+use tokio::{
+    sync::{mpsc, Mutex},
+    time::sleep,
+};
 
 use crate::{
     config::{self, Config},
@@ -31,15 +35,13 @@ use crate::{
     Error,
 };
 
+type Task = Result<(u64, Option<Events<PolkadotConfig>>), String>;
+
 pub(crate) async fn run(cfg: Config) -> Result<(), Error> {
     let database = Arc::new(Mutex::new(Database::new(&cfg.indexer).await?));
 
     let indexer = Indexer::new(&cfg.clone(), database.clone()).await?;
-    tokio::spawn(async move {
-        if let Err(e) = indexer.run(cfg.indexer.from_block).await {
-            error!("failed to run indexer: {e}");
-        }
-    });
+    tokio::spawn(async move { indexer.run(cfg.indexer.from_block).await });
 
     tokio::spawn(async move {
         if let Err(e) = run_api(&cfg.indexer, database).await {
@@ -64,26 +66,58 @@ impl Indexer {
         })
     }
 
-    async fn run(&self, from_block: u64) -> Result<(), Error> {
-        let mut current_block_index: u64 = from_block;
-        loop {
-            trace!("get events in {} block", current_block_index);
-            let events = self.peaq_client.get_events_in_block(current_block_index).await?;
-            let events = match events {
-                Some(events) => events,
-                None => {
-                    trace!("indexer synced all blocks; waiting for new");
-                    tokio::time::sleep(Duration::from_secs(3)).await;
-                    continue;
-                }
-            };
-            for event in events.iter() {
-                let event = event?;
-                self.process_event(event).await?;
-            }
-            // Go to the next block.
-            current_block_index += 1;
+    async fn run(&self, from_block: u64) {
+        if let Ok(latest_block) = self.peaq_client.get_last_block().await {
+            trace!("current latest block is: {}", latest_block.block.header.number);
         }
+        let mut current_block_index: u64 = from_block;
+        let mut workers: usize = 250;
+        loop {
+            let saved_current_block_index = current_block_index;
+            let saved_workers = workers;
+            debug!("current block to sync is {current_block_index}; workers = {workers}");
+            match self.process(&mut current_block_index, workers).await {
+                Ok(no_more_events) => {
+                    if no_more_events {
+                        current_block_index = saved_current_block_index;
+                        workers /= 2;
+                        if workers == 0 {
+                            workers = 1;
+                        }
+                        trace!("indexer synced all blocks; waiting for new; current workers count is {workers}");
+                        sleep(Duration::from_secs(10)).await;
+                    }
+                }
+                Err(e) => {
+                    error!("failed to process starting from {saved_current_block_index}: {e}");
+                    current_block_index = saved_current_block_index;
+                    workers = saved_workers;
+                    sleep(Duration::from_secs(10)).await;
+                }
+            }
+        }
+    }
+
+    async fn process(&self, current_block_index: &mut u64, workers: usize) -> Result<bool, String> {
+        let (res_s, res_r) = mpsc::channel::<Task>(1);
+
+        start_workers(current_block_index, workers, &self.peaq_client, res_s);
+        let results = wait_results(workers, res_r).await.map_err(|e| e.to_string())?;
+
+        for res in results {
+            let events = match res.1 {
+                Some(events) => events,
+                // It means there are no events in the block.
+                // Usually it means there is no block with such index
+                // and we need to wait for it.
+                None => return Ok(true),
+            };
+            for event in events.iter().flatten() {
+                self.process_event(event).await.map_err(|e| e.to_string())?;
+            }
+        }
+
+        Ok(false)
     }
 
     async fn process_event(&self, event: EventDetails<PolkadotConfig>) -> Result<(), Error> {
@@ -139,6 +173,62 @@ impl Indexer {
         debug!("remove event received for {}", address);
         self.database.lock().await.delete(address).await
     }
+}
+
+fn start_workers(
+    current_block_index: &mut u64,
+    workers: usize,
+    peaq_client: &Client,
+    res_s: mpsc::Sender<Task>,
+) {
+    for _ in 0..workers {
+        *current_block_index += 1;
+        let local_block_index = *current_block_index;
+        let peaq_client = peaq_client.clone();
+        let res_s_ = res_s.clone();
+        tokio::spawn(async move {
+            trace!("get events in {} block", local_block_index);
+            let events = match peaq_client.get_events_in_block(local_block_index).await {
+                Ok(events) => events,
+                Err(e) => {
+                    error!("failed to get events in {local_block_index} block from peaq: {:?}", e);
+                    if let Err(e) =
+                        res_s_.send(Err("failed to get events from peaq".to_string())).await
+                    {
+                        error!(
+                            "failed to send err result by {local_block_index} to the channel: {e}"
+                        )
+                    }
+                    return;
+                }
+            };
+            if let Err(e) = res_s_.send(Ok((local_block_index, events))).await {
+                error!("failed to send ok result by {local_block_index} to the channel: {e}");
+            }
+        });
+    }
+}
+
+async fn wait_results(
+    workers: usize,
+    mut res_r: mpsc::Receiver<Task>,
+) -> Result<BTreeMap<u64, Option<Events<PolkadotConfig>>>, Error> {
+    let mut results: BTreeMap<u64, Option<Events<PolkadotConfig>>> = BTreeMap::new();
+    for _ in 0..workers {
+        let res = match res_r.recv().await {
+            Some(res) => res,
+            None => return Err("failed to receive a result from the thread, it is none".into()),
+        };
+        match res {
+            Ok(res) => {
+                results.insert(res.0, res.1);
+            }
+            Err(_) => {
+                return Err("failed to receive a result from the thread, error received".into());
+            }
+        }
+    }
+    Ok(results)
 }
 
 #[derive(sqlx::FromRow)]

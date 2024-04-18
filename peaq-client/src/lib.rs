@@ -1,12 +1,8 @@
-use std::ops::Deref;
+use std::{fmt::Debug, ops::Deref};
 
 use peaq_gen::api::{
     peaq_did,
-    peaq_rbac::{
-        self,
-        calls::types::fetch_role::Entity,
-        events::{AllPermissionsFetched, FetchedUserPermissions},
-    },
+    peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
 };
 use rand::RngCore;
 use subxt::{
@@ -31,7 +27,26 @@ use subxt_signer::sr25519::Keypair;
 
 pub use peaq_gen;
 
-pub type Error = Box<dyn std::error::Error>;
+// We need custom error here to use it across threads.
+pub struct Error(String);
+
+impl Debug for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Error> for Box<dyn std::error::Error> {
+    fn from(value: Error) -> Self {
+        value.into()
+    }
+}
+
+impl<T: ToString> From<T> for Error {
+    fn from(value: T) -> Self {
+        Self(value.to_string())
+    }
+}
 
 #[derive(Clone)]
 pub struct Client {
@@ -58,9 +73,8 @@ impl Client {
 
     pub async fn get_balance(&self, address: &AccountId32) -> Result<u128, Error> {
         let last_block = self.get_last_block().await?;
-        let balance_address = peaq_gen::api::storage().system().account(address);
-        let info =
-            self.api.storage().at(last_block.block.header.hash()).fetch(&balance_address).await?;
+        let query = peaq_gen::api::storage().system().account(address);
+        let info = self.api.storage().at(last_block.block.header.hash()).fetch(&query).await?;
         if let Some(info) = info {
             return Ok(info.data.free);
         }
@@ -401,14 +415,17 @@ impl<'a> RBAC<'a> {
     }
 
     pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<EntityRecord>, Error> {
-        let call = self.peaq_rbac_api.fetch_permissions(owner);
-        let tx = self.signer_client.submit_tx(&call).await?;
-        let entities = self
+        let query = peaq_gen::api::storage().peaq_rbac().permission_store(owner);
+        let res = self
             .client
-            .process_events(tx, Some(filter_all_permissions_fetched))
+            .api
+            .storage()
+            .at_latest()
             .await?
-            .ok_or_else(|| "failed to find all permissions for the owner".to_string())?;
-        Ok(entities)
+            .fetch(&query)
+            .await?
+            .ok_or_else(|| "failed to find any permissions".to_string())?;
+        Ok(res)
     }
 }
 
@@ -425,17 +442,6 @@ fn filter_fetched_user_permissions(
 ) -> Option<Vec<EntityRecord>> {
     if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
         if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
-            return Some(evt.0);
-        }
-    }
-    None
-}
-
-fn filter_all_permissions_fetched(
-    event: EventDetails<PolkadotConfig>,
-) -> Option<Vec<EntityRecord>> {
-    if event.variant_name() == peaq_rbac::events::AllPermissionsFetched::EVENT {
-        if let Ok(Some(evt)) = event.as_event::<AllPermissionsFetched>() {
             return Some(evt.0);
         }
     }
@@ -510,8 +516,8 @@ mod tests {
         let rbac = client.rbac();
 
         // let permission_name = String::from("mqtt_access");
-        // let role_name = String::from("accessor");
-        // let group_name = String::from("subscribers");
+        // let role_name = String::from("mqtt_accessor");
+        // let group_name = String::from("mqtt_subscribers");
 
         // eprintln!("adding permission");
         // let permission_id = rbac.add_permission(permission_name).await.unwrap();
