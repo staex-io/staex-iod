@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{fmt::Debug, ops::Deref};
 
 use peaq_gen::api::{
     peaq_did,
@@ -28,22 +28,23 @@ use subxt_signer::sr25519::Keypair;
 pub use peaq_gen;
 
 // We need custom error here to use it across threads.
-#[derive(Debug)]
-pub struct Error {
-    _inner: String,
+pub struct Error(String);
+
+impl Debug for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 impl From<Error> for Box<dyn std::error::Error> {
     fn from(value: Error) -> Self {
-        value._inner.into()
+        value.into()
     }
 }
 
 impl<T: ToString> From<T> for Error {
     fn from(value: T) -> Self {
-        Self {
-            _inner: value.to_string(),
-        }
+        Self(value.to_string())
     }
 }
 
