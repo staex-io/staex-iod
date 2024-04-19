@@ -482,7 +482,6 @@ mod tests {
             "test_{}",
             SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         );
-
         let random_number = rand::random();
         let value = serde_json::to_vec(&Info { random_number }).unwrap();
         client.did().add_attribute(&name, value).await.unwrap();
