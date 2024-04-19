@@ -306,9 +306,9 @@ pub const ENTITY_LENGTH: usize = 32;
 
 #[derive(Serialize, Deserialize)]
 pub struct Permission {
-    id: [u8; 32],
-    name: Vec<u8>,
-    enabled: bool,
+    pub id: [u8; 32],
+    pub name: Vec<u8>,
+    pub enabled: bool,
 }
 
 #[derive(Serialize, Deserialize)]

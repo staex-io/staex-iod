@@ -168,8 +168,8 @@ async fn process_user(
     let user_permissions =
         peaq_client.rbac().fetch_user_permissions(peaq_client.address(), address.0).await?;
     let mut found = false;
-    for user_permission in user_permissions {
-        if user_permission.id == *permission_id {
+    for permission in user_permissions {
+        if permission.id == *permission_id {
             found = true;
             break;
         }
