@@ -5,6 +5,7 @@ use peaq_gen::api::{
     peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
 };
 use rand::RngCore;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use subxt::{
     backend::{
         legacy::{
@@ -17,7 +18,10 @@ use subxt::{
     config::{Header, PolkadotExtrinsicParamsBuilder},
     error::{RpcError, TransactionError},
     events::{EventDetails, Events, StaticEvent},
-    ext::{codec::DecodeAll, sp_core::H256},
+    ext::sp_core::{
+        bytes::{from_hex, to_hex},
+        H256,
+    },
     rpc_params,
     tx::{Signer, TxInBlock, TxPayload, TxStatus},
     utils::AccountId32,
@@ -251,6 +255,12 @@ impl Deref for SignerClient {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct ReadAttributeResult {
+    // We receive value as hex string.
+    value: String,
+}
+
 /// RBAC structure contains methods to interact with PEAQ DID pallet.
 pub struct DID<'a> {
     client: &'a Client,
@@ -270,36 +280,28 @@ impl<'a> DID<'a> {
         Ok(())
     }
 
-    pub async fn read_attribute<T, F>(
+    pub async fn read_attribute<T>(
         &self,
         name: &str,
         address: AccountId32,
-        filter: Option<F>,
     ) -> Result<Option<T>, Error>
     where
-        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
+        T: DeserializeOwned,
     {
-        let call = self.peaq_did_api.read_attribute(address, name.as_bytes().to_vec());
-        let tx = self.signer_client.submit_tx(&call).await?;
-        match self.client.process_events(tx, filter).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
-                    // e.as_root_error() doesn't work, so we get second byte
-                    // because it contains error index.
-                    let a = e.bytes()[1..2].to_vec();
-                    // And decode error manually.
-                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
-                    if let peaq_did::Error::AttributeNotFound = did_err {
-                        Ok(None)
-                    } else {
-                        Err(e.into())
-                    }
-                } else {
-                    Err(e.into())
-                }
-            }
-        }
+        let name = to_hex(name.as_bytes(), false);
+        let latest_block = self.client.get_last_block().await?.block.header.hash();
+        let result: Option<ReadAttributeResult> = self
+            .client
+            .rpc
+            .request("peaqdid_readAttribute", rpc_params![address, name, latest_block])
+            .await?;
+        let result = match result {
+            Some(result) => result,
+            None => return Ok(None),
+        };
+        let value = from_hex(&result.value)?;
+        let data: T = serde_json::from_slice(&value)?;
+        Ok(Some(data))
     }
 
     pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
@@ -450,8 +452,12 @@ fn filter_fetched_user_permissions(
 
 #[cfg(test)]
 mod tests {
-    use std::str::{from_utf8, FromStr};
+    use std::{
+        str::{from_utf8, FromStr},
+        time::SystemTime,
+    };
 
+    use serde::{Deserialize, Serialize};
     use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
     use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
@@ -482,6 +488,38 @@ mod tests {
         let account_id: AccountId32 =
             <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
         eprintln!("Account id {}", account_id)
+    }
+
+    #[tokio::test]
+    #[ignore = "run it manually to set phrase"]
+    async fn get_did_attribute() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let client =
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Info {
+            random_number: u8,
+        }
+
+        let name = format!(
+            "test_{}",
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+        );
+
+        let random_number = rand::random();
+        let value = serde_json::to_vec(&Info { random_number }).unwrap();
+        client.did().add_attribute(&name, value).await.unwrap();
+
+        let data: Option<Info> =
+            client.did().read_attribute(&name, account_id.clone()).await.unwrap();
+        assert_eq!(random_number, data.unwrap().random_number);
+
+        let data: Option<Info> = client.did().read_attribute("asd", account_id).await.unwrap();
+        assert!(data.is_none())
     }
 
     #[tokio::test]

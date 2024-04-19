@@ -7,3 +7,5 @@ resolver = "2"
 subxt = { version = "0.35.3", features = ["substrate-compat"], default-features = true }
 subxt-signer = { version = "0.35.3", features = [], default-features = true }
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "signal", "process"], default-features = false }
+serde = { version = "1.0.198", features = [], default-features = false }
+serde_json = { version = "1.0.116", features = [], default-features = false }

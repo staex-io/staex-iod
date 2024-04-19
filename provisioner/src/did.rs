@@ -1,13 +1,9 @@
 use std::collections::HashMap;
 
 use log::{info, warn};
-use peaq_client::{peaq_gen::api::peaq_did::events::AttributeRead, SignerClient};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use subxt::{
-    events::{EventDetails, StaticEvent},
-    utils::AccountId32,
-    PolkadotConfig,
-};
+use peaq_client::SignerClient;
+use serde::{Deserialize, Serialize};
+use subxt::utils::AccountId32;
 use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
 use crate::{config, Error};
@@ -59,11 +55,6 @@ pub(crate) struct ClientInfo {
     pub(crate) staex_mcc_id: String,
 }
 
-pub(crate) enum ReadResult<T> {
-    Ok(T),
-    DecodeError,
-}
-
 pub(crate) async fn update_client_info(
     rpc_url: &str,
     phrase: &Mnemonic,
@@ -88,15 +79,11 @@ pub(crate) async fn sync_did(
         "starting to get on-chain device information starting from {} block",
         last_block.block.header.number
     );
-    let read_result: Option<ReadResult<Device>> = peaq_client
+    let device: Option<Device> = peaq_client
         .did()
-        .read_attribute::<ReadResult<Device>, _>(
-            DEVICE_ATTRIBUTE_NAME,
-            peaq_client.address().clone(),
-            Some(read_attribute_filter),
-        )
+        .read_attribute::<Device>(DEVICE_ATTRIBUTE_NAME, peaq_client.address().clone())
         .await?;
-    let sync_state = get_sync_state(read_result, cfg);
+    let sync_state = get_sync_state(device, cfg);
     match sync_state {
         SyncState::Ok => {
             info!("on-chain device is up to date");
@@ -132,65 +119,36 @@ pub(crate) async fn get_client_info(
     peaq_client: &SignerClient,
     address: AccountId32,
 ) -> Result<ClientInfo, Error> {
-    let client_info = match peaq_client
+    match peaq_client
         .did()
-        .read_attribute::<ReadResult<ClientInfo>, _>(
-            CLIENT_INFO_ATTRIBUTE_NAME,
-            address,
-            Some(read_attribute_filter),
-        )
+        .read_attribute::<Option<ClientInfo>>(CLIENT_INFO_ATTRIBUTE_NAME, address)
         .await?
         .ok_or("on-chain client attributes are empty")?
     {
-        ReadResult::Ok(client) => client,
-        ReadResult::DecodeError => {
-            return Err("failed to decode on-chain result with client did attributes".into())
-        }
-    };
-    Ok(client_info)
-}
-
-fn read_attribute_filter<T>(event: EventDetails<PolkadotConfig>) -> Option<ReadResult<T>>
-where
-    T: DeserializeOwned,
-{
-    if event.variant_name() == AttributeRead::EVENT {
-        if let Ok(Some(evt)) = event.as_event::<AttributeRead>() {
-            match serde_json::from_slice(&evt.0.value) {
-                Ok(data) => return Some(ReadResult::Ok(data)),
-                Err(e) => {
-                    // Looks like we have outdated format.
-                    warn!("failed to decode on-chain attribute: {}", e);
-                    return Some(ReadResult::DecodeError);
-                }
-            }
-        }
+        Some(client_info) => Ok(client_info),
+        None => Err("failed to decode on-chain result with client did attributes".into()),
     }
-    None
 }
 
-fn get_sync_state(read_result: Option<ReadResult<Device>>, expected: &config::Device) -> SyncState {
-    if read_result.is_none() {
+fn get_sync_state(device: Option<Device>, expected: &config::Device) -> SyncState {
+    if device.is_none() {
         return SyncState::NotCreated;
     }
-    let read_result = read_result.unwrap();
-    match read_result {
-        ReadResult::DecodeError => SyncState::Outdated,
-        ReadResult::Ok(device) => match device {
-            Device::V1(device) => {
-                if device.data_type != expected.attributes.data_type
-                    || device.location != expected.attributes.location
-                    || device.price_access != expected.attributes.price_access
-                    || device.price_pin != expected.attributes.price_pin
-                    || device.staex_mcc_id != expected.attributes.staex_mcc_id
-                    || device.mqtt_topics != expected.attributes.mqtt_topics
-                {
-                    SyncState::Outdated
-                } else {
-                    SyncState::Ok
-                }
+    let device = device.unwrap();
+    match device {
+        Device::V1(device) => {
+            if device.data_type != expected.attributes.data_type
+                || device.location != expected.attributes.location
+                || device.price_access != expected.attributes.price_access
+                || device.price_pin != expected.attributes.price_pin
+                || device.staex_mcc_id != expected.attributes.staex_mcc_id
+                || device.mqtt_topics != expected.attributes.mqtt_topics
+            {
+                SyncState::Outdated
+            } else {
+                SyncState::Ok
             }
-        },
+        }
     }
 }
 
