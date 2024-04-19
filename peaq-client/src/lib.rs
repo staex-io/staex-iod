@@ -2,9 +2,10 @@ use std::{fmt::Debug, ops::Deref};
 
 use peaq_gen::api::{
     peaq_did,
-    peaq_rbac::{self, calls::types::fetch_role::Entity, events::FetchedUserPermissions},
+    peaq_rbac::{self, calls::types::fetch_role::Entity},
 };
 use rand::RngCore;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use subxt::{
     backend::{
         legacy::{
@@ -16,8 +17,11 @@ use subxt::{
     blocks::Block,
     config::{Header, PolkadotExtrinsicParamsBuilder},
     error::{RpcError, TransactionError},
-    events::{EventDetails, Events, StaticEvent},
-    ext::{codec::DecodeAll, sp_core::H256},
+    events::Events,
+    ext::sp_core::{
+        bytes::{from_hex, to_hex},
+        H256,
+    },
     rpc_params,
     tx::{Signer, TxInBlock, TxPayload, TxStatus},
     utils::AccountId32,
@@ -176,28 +180,6 @@ impl Client {
         }
         Err(RpcError::SubscriptionDropped.into())
     }
-
-    async fn process_events<T, F>(
-        &self,
-        tx: TxInBlock<PolkadotConfig, OnlineClient<PolkadotConfig>>,
-        filter: Option<F>,
-    ) -> Result<Option<T>, subxt::Error>
-    where
-        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
-    {
-        if filter.is_none() {
-            return Ok(None);
-        }
-        let filter = filter.unwrap();
-        let events = tx.wait_for_success().await?;
-        for event in events.iter() {
-            let event = event?;
-            if let Some(data) = filter(event) {
-                return Ok(Some(data));
-            }
-        }
-        Ok(None)
-    }
 }
 
 #[derive(Clone)]
@@ -251,6 +233,12 @@ impl Deref for SignerClient {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct ReadAttributeResult {
+    // We receive value as hex string.
+    value: String,
+}
+
 /// RBAC structure contains methods to interact with PEAQ DID pallet.
 pub struct DID<'a> {
     client: &'a Client,
@@ -270,36 +258,28 @@ impl<'a> DID<'a> {
         Ok(())
     }
 
-    pub async fn read_attribute<T, F>(
+    pub async fn read_attribute<T>(
         &self,
         name: &str,
         address: AccountId32,
-        filter: Option<F>,
     ) -> Result<Option<T>, Error>
     where
-        F: Fn(EventDetails<PolkadotConfig>) -> Option<T>,
+        T: DeserializeOwned,
     {
-        let call = self.peaq_did_api.read_attribute(address, name.as_bytes().to_vec());
-        let tx = self.signer_client.submit_tx(&call).await?;
-        match self.client.process_events(tx, filter).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                if let subxt::Error::Runtime(subxt::error::DispatchError::Module(e)) = e {
-                    // e.as_root_error() doesn't work, so we get second byte
-                    // because it contains error index.
-                    let a = e.bytes()[1..2].to_vec();
-                    // And decode error manually.
-                    let did_err = peaq_did::Error::decode_all(&mut a.as_slice())?;
-                    if let peaq_did::Error::AttributeNotFound = did_err {
-                        Ok(None)
-                    } else {
-                        Err(e.into())
-                    }
-                } else {
-                    Err(e.into())
-                }
-            }
-        }
+        let name = to_hex(name.as_bytes(), false);
+        let latest_block = self.client.get_last_block().await?.block.header.hash();
+        let result: Option<ReadAttributeResult> = self
+            .client
+            .rpc
+            .request("peaqdid_readAttribute", rpc_params![address, name, latest_block])
+            .await?;
+        let result = match result {
+            Some(result) => result,
+            None => return Ok(None),
+        };
+        let value = from_hex(&result.value)?;
+        let data: T = serde_json::from_slice(&value)?;
+        Ok(Some(data))
     }
 
     pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
@@ -324,7 +304,18 @@ impl<'a> DID<'a> {
 
 pub const ENTITY_LENGTH: usize = 32;
 
-pub type EntityRecord = peaq_gen::api::runtime_types::peaq_pallet_rbac::structs::Entity<Entity>;
+#[derive(Serialize, Deserialize)]
+pub struct Permission {
+    pub id: [u8; 32],
+    pub name: Vec<u8>,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+struct FetchUserPermissionsResult {
+    #[serde(rename = "Ok")]
+    permissions: Vec<Permission>,
+}
 
 /// RBAC structure contains methods to interact with PEAQ RBAC pallet.
 #[allow(clippy::upper_case_acronyms)]
@@ -403,29 +394,24 @@ impl<'a> RBAC<'a> {
         &self,
         owner: AccountId32,
         user_id: Entity,
-    ) -> Result<Vec<EntityRecord>, Error> {
-        let call = self.peaq_rbac_api.fetch_user_permissions(owner, user_id);
-        let tx = self.signer_client.submit_tx(&call).await?;
-        let entities = self
+    ) -> Result<Vec<Permission>, Error> {
+        let latest_block = self.client.get_last_block().await?.block.header.hash();
+        let result: FetchUserPermissionsResult = self
             .client
-            .process_events(tx, Some(filter_fetched_user_permissions))
-            .await?
-            .ok_or_else(|| "failed to find permission entities for user".to_string())?;
-        Ok(entities)
+            .rpc
+            .request("peaqrbac_fetchUserPermissions", rpc_params![owner, user_id, latest_block])
+            .await?;
+        Ok(result.permissions)
     }
 
-    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<EntityRecord>, Error> {
-        let query = peaq_gen::api::storage().peaq_rbac().permission_store(owner);
-        let res = self
+    pub async fn fetch_permissions(&self, owner: AccountId32) -> Result<Vec<Permission>, Error> {
+        let latest_block = self.client.get_last_block().await?.block.header.hash();
+        let result: FetchUserPermissionsResult = self
             .client
-            .api
-            .storage()
-            .at_latest()
-            .await?
-            .fetch(&query)
-            .await?
-            .ok_or_else(|| "failed to find any permissions".to_string())?;
-        Ok(res)
+            .rpc
+            .request("peaqrbac_fetchPermissions", rpc_params![owner, latest_block])
+            .await?;
+        Ok(result.permissions)
     }
 }
 
@@ -437,21 +423,14 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
     Ok((phrase, keypair, account_id))
 }
 
-fn filter_fetched_user_permissions(
-    event: EventDetails<PolkadotConfig>,
-) -> Option<Vec<EntityRecord>> {
-    if event.variant_name() == peaq_rbac::events::FetchedUserPermissions::EVENT {
-        if let Ok(Some(evt)) = event.as_event::<FetchedUserPermissions>() {
-            return Some(evt.0);
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
-    use std::str::{from_utf8, FromStr};
+    use std::{
+        str::{from_utf8, FromStr},
+        time::SystemTime,
+    };
 
+    use serde::{Deserialize, Serialize};
     use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
     use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
@@ -486,6 +465,37 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "run it manually to set phrase"]
+    async fn get_did_attribute() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+        let account_id: AccountId32 =
+            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let client =
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct Info {
+            random_number: u8,
+        }
+
+        let name = format!(
+            "test_{}",
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+        );
+        let random_number = rand::random();
+        let value = serde_json::to_vec(&Info { random_number }).unwrap();
+        client.did().add_attribute(&name, value).await.unwrap();
+
+        let data: Option<Info> =
+            client.did().read_attribute(&name, account_id.clone()).await.unwrap();
+        assert_eq!(random_number, data.unwrap().random_number);
+
+        let data: Option<Info> = client.did().read_attribute("asd", account_id).await.unwrap();
+        assert!(data.is_none())
+    }
+
+    #[tokio::test]
+    #[ignore = "run it manually to set phrase"]
     async fn get_owner_permissions() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
@@ -499,8 +509,8 @@ mod tests {
         }
     }
 
-    #[ignore = "requires manually setup mnemonic phrase"]
     #[tokio::test]
+    #[ignore = "requires manually setup mnemonic phrase"]
     async fn test_rbac() {
         let keypair = Keypair::from_phrase(&Mnemonic::from_str("").unwrap(), None).unwrap();
         let owner: AccountId32 =

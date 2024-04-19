@@ -2835,6 +2835,8 @@ dependencies = [
  "bip39",
  "peaq-gen",
  "rand",
+ "serde",
+ "serde_json",
  "subxt",
  "subxt-signer",
  "tokio",

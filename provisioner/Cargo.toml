@@ -8,8 +8,8 @@ peaq-client = { path = "../peaq-client" }
 subxt = { workspace = true }
 subxt-signer = { workspace = true }
 tokio = { workspace = true }
-serde = { version = "1.0.198", features = [], default-features = false }
-serde_json = { version = "1.0.116", features = [], default-features = false }
+serde = { workspace = true }
+serde_json = { workspace = true }
 log = { version = "0.4.21", features = [], default-features = false }
 env_logger = { version = "0.11.3", features = ["auto-color", "humantime"], default-features = false }
 clap = { version = "4.5.4", features = ["std", "derive", "help"], default-features = false }

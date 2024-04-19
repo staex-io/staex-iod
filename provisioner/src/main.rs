@@ -121,10 +121,12 @@ async fn main() -> Result<(), Error> {
             tokio::signal::ctrl_c().await?;
             debug!("received termination signal");
             stop_s.send(())?;
-            if let Err(e) = timeout(Duration::from_secs(10), stop_s.closed()).await {
-                error!("failed to stop staex mcc and example app because of timeout: {}", e);
+            match timeout(Duration::from_secs(10), stop_s.closed()).await {
+                Ok(_) => info!("everything was stopped successfully"),
+                Err(e) => {
+                    error!("failed to stop staex mcc and example app because of timeout: {}", e)
+                }
             }
-            info!("everything was stopped successfully");
         }
         Commands::Indexer {} => {
             indexer::run(cfg).await?;
