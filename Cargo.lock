@@ -3217,6 +3217,7 @@ dependencies = [
  "libc",
  "log",
  "peaq-client",
+ "prost",
  "serde",
  "serde_json",
  "serde_qs",

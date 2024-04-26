@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use peaq_client::{new_document, Document, Service, SignerClient};
 use serde::{Deserialize, Serialize};
 use subxt::utils::AccountId32;
@@ -24,8 +24,6 @@ enum SyncState {
 
 pub(crate) const V1: &str = "v1";
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
 pub(crate) enum Device {
     V1(DeviceV1),
 }
@@ -38,7 +36,7 @@ impl Device {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct DeviceV1 {
     data_type: String,
     location: String,
@@ -141,14 +139,8 @@ pub(crate) async fn get_client_info(
     Err("failed to find staex mcc id to return client info".to_string().into())
 }
 
-fn get_sync_state(doc: Option<Document>, expected: &config::Device) -> SyncState {
-    let doc = match doc {
-        Some(doc) => doc,
-        None => return SyncState::NotCreated,
-    };
-    if doc.services.len() != 6 {
-        return SyncState::Outdated;
-    }
+pub(crate) fn prepare_device(doc: Document) -> Result<Device, Error> {
+    let mut version: String = String::new();
     let mut data_type: String = String::new();
     let mut location: String = String::new();
     let mut price_access: f64 = 0.;
@@ -159,69 +151,77 @@ fn get_sync_state(doc: Option<Document>, expected: &config::Device) -> SyncState
     for service in doc.services {
         let data = service.data;
         match service.r#type.as_str() {
+            "staex_iod_version" => version = data,
             "data_type" => data_type = data,
             "location" => location = data,
             "price_access" => {
-                if let Ok(data_as_f64) = data.parse() {
-                    price_access = data_as_f64;
-                } else {
-                    return SyncState::Outdated;
-                }
+                price_access = data.parse()?;
             }
             "price_pin" => {
-                if let Ok(data_as_f64) = data.parse() {
-                    price_pin = data_as_f64;
-                } else {
-                    return SyncState::Outdated;
-                }
+                price_pin = data.parse()?;
             }
             "staex_mcc_id" => staex_mcc_id = data,
-            "mqtt_topics" => mqtt_topics.push(data),
+            "mqtt_topic" => mqtt_topics.push(data),
             typ => {
                 additional.insert(typ.to_string(), data.into());
             }
         }
     }
-    let device = DeviceV1 {
-        data_type,
-        location,
-        price_access,
-        price_pin,
-        staex_mcc_id,
-        mqtt_topics,
-        additional: if additional.is_empty() {
-            None
-        } else {
-            Some(additional)
-        },
+    match version.as_str() {
+        V1 => Ok(Device::V1(DeviceV1 {
+            data_type,
+            location,
+            price_access,
+            price_pin,
+            staex_mcc_id,
+            mqtt_topics,
+            additional: if additional.is_empty() {
+                None
+            } else {
+                Some(additional)
+            },
+        })),
+        version => Err(format!("unknown version to convert document to device: {version}").into()),
+    }
+}
+
+fn get_sync_state(doc: Option<Document>, expected: &config::Device) -> SyncState {
+    let doc = match doc {
+        Some(doc) => doc,
+        None => return SyncState::NotCreated,
     };
-    if device.data_type != expected.attributes.data_type
-        || device.location != expected.attributes.location
-        || device.price_access != expected.attributes.price_access
-        || device.price_pin != expected.attributes.price_pin
-        || device.staex_mcc_id != expected.attributes.staex_mcc_id
-        || device.mqtt_topics != expected.attributes.mqtt_topics
-    {
-        SyncState::Outdated
-    } else {
-        SyncState::Ok
+    if doc.services.len() < 7 {
+        return SyncState::Outdated;
+    }
+    let device = match prepare_device(doc) {
+        Ok(device) => device,
+        Err(_) => return SyncState::Outdated,
+    };
+    match device {
+        Device::V1(device) => {
+            if device.data_type != expected.attributes.data_type
+                || device.location != expected.attributes.location
+                || device.price_access != expected.attributes.price_access
+                || device.price_pin != expected.attributes.price_pin
+                || device.staex_mcc_id != expected.attributes.staex_mcc_id
+                || device.mqtt_topics != expected.attributes.mqtt_topics
+            {
+                debug!("device is outdated: {:?}", device);
+                SyncState::Outdated
+            } else {
+                SyncState::Ok
+            }
+        }
     }
 }
 
 fn prepare_document(account_id: AccountId32, cfg: &config::Device) -> Document {
-    // let device = Device::V1(DeviceV1 {
-    //     data_type: cfg.attributes.data_type.clone(),
-    //     location: cfg.attributes.location.clone(),
-    //     price_pin: cfg.attributes.price_pin,
-    //     price_access: cfg.attributes.price_access,
-    //     staex_mcc_id: cfg.attributes.staex_mcc_id.clone(),
-    //     mqtt_topics: cfg.attributes.mqtt_topics.clone(),
-    //     additional: cfg.attributes.additional.clone(),
-    // });
-    // let value = serde_json::to_vec(&device)?;
-    // Ok(value)
-
     let mut services = vec![
+        Service {
+            r#type: "staex_iod_version".to_string(),
+            data: V1.to_string(),
+            ..Default::default()
+        },
         Service {
             r#type: "data_type".to_string(),
             data: cfg.attributes.data_type.clone(),

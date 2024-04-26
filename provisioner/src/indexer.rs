@@ -18,6 +18,7 @@ use peaq_client::{
     peaq_gen::api::peaq_did::events::{AttributeAdded, AttributeRemoved, AttributeUpdated},
     Client,
 };
+use prost::Message;
 use serde::{Deserialize, Serialize};
 use sqlx::{Connection, QueryBuilder, SqliteConnection};
 use subxt::{
@@ -31,7 +32,7 @@ use tokio::{
 
 use crate::{
     config::{self, Config},
-    did::{Device, DEVICE_ATTRIBUTE_NAME, V1},
+    did::{prepare_device, Device, DEVICE_ATTRIBUTE_NAME, V1},
     Error,
 };
 
@@ -268,13 +269,14 @@ impl Database {
     }
 
     async fn save(&mut self, address: &str, data: Vec<u8>) -> Result<(), Error> {
-        let device: Device = serde_json::from_slice(&data)?;
+        let doc = peaq_client::Document::decode(&*data).map_err(|e| e.to_string())?;
+        let device = prepare_device(doc)?;
         let data: Vec<u8> = match &device {
             Device::V1(device) => serde_json::to_vec(&device)?,
         };
         sqlx::query(
             r#"
-                insert into devices (address, version, data, updated_at) values (?1, ?2, ?3, ?4) 
+                insert into devices (address, version, data, updated_at) values (?1, ?2, ?3, ?4)
                 on conflict(address) do update set data = ?3, updated_at = ?4
             "#,
         )
