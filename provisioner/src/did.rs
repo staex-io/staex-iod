@@ -13,6 +13,14 @@ pub(crate) const DEVICE_ATTRIBUTE_NAME: &str = "staex-iod-device";
 // Key to store information about client.
 pub(crate) const CLIENT_INFO_ATTRIBUTE_NAME: &str = "staex-iod-client";
 
+const SERVICE_VERSION: &str = "staex_iod_version";
+const SERVICE_DATA_TYPE: &str = "data_type";
+const SERVICE_LOCATION: &str = "location";
+const SERVICE_PRICE_ACCESS: &str = "price_access";
+const SERVICE_PRICE_PIN: &str = "price_pin";
+const SERVICE_STAEX_MCC_ID: &str = "staex_mcc_id";
+const SERVICE_MQTT_TOPIC: &str = "mqtt_topic";
+
 // SyncState represent on-chain DID state.
 // We need to compare local DID information with on-chain
 // and decide what to do.
@@ -63,7 +71,7 @@ pub(crate) async fn update_client_info(
     let doc = new_document(
         keypair.public_key().to_account_id().to_string(),
         vec![Service {
-            r#type: "staex_mcc_id".to_string(),
+            r#type: SERVICE_STAEX_MCC_ID.to_string(),
             data: staex_mcc_id,
             ..Default::default()
         }],
@@ -130,7 +138,7 @@ pub(crate) async fn get_client_info(
         .await?
         .ok_or("on-chain client attributes are empty")?;
     for service in doc.services {
-        if &service.r#type == "staex_mcc_id" {
+        if service.r#type == SERVICE_STAEX_MCC_ID {
             return Ok(ClientInfo {
                 staex_mcc_id: service.data,
             });
@@ -151,17 +159,17 @@ pub(crate) fn prepare_device(doc: Document) -> Result<Device, Error> {
     for service in doc.services {
         let data = service.data;
         match service.r#type.as_str() {
-            "staex_iod_version" => version = data,
-            "data_type" => data_type = data,
-            "location" => location = data,
-            "price_access" => {
+            SERVICE_VERSION => version = data,
+            SERVICE_DATA_TYPE => data_type = data,
+            SERVICE_LOCATION => location = data,
+            SERVICE_PRICE_ACCESS => {
                 price_access = data.parse()?;
             }
-            "price_pin" => {
+            SERVICE_PRICE_PIN => {
                 price_pin = data.parse()?;
             }
-            "staex_mcc_id" => staex_mcc_id = data,
-            "mqtt_topic" => mqtt_topics.push(data),
+            SERVICE_STAEX_MCC_ID => staex_mcc_id = data,
+            SERVICE_MQTT_TOPIC => mqtt_topics.push(data),
             typ => {
                 additional.insert(typ.to_string(), data.into());
             }
@@ -218,39 +226,39 @@ fn get_sync_state(doc: Option<Document>, expected: &config::Device) -> SyncState
 fn prepare_document(account_id: AccountId32, cfg: &config::Device) -> Document {
     let mut services = vec![
         Service {
-            r#type: "staex_iod_version".to_string(),
+            r#type: SERVICE_VERSION.to_string(),
             data: V1.to_string(),
             ..Default::default()
         },
         Service {
-            r#type: "data_type".to_string(),
+            r#type: SERVICE_DATA_TYPE.to_string(),
             data: cfg.attributes.data_type.clone(),
             ..Default::default()
         },
         Service {
-            r#type: "location".to_string(),
+            r#type: SERVICE_LOCATION.to_string(),
             data: cfg.attributes.location.clone(),
             ..Default::default()
         },
         Service {
-            r#type: "price_pin".to_string(),
+            r#type: SERVICE_PRICE_PIN.to_string(),
             data: cfg.attributes.price_pin.to_string(),
             ..Default::default()
         },
         Service {
-            r#type: "price_access".to_string(),
+            r#type: SERVICE_PRICE_ACCESS.to_string(),
             data: cfg.attributes.price_access.to_string(),
             ..Default::default()
         },
         Service {
-            r#type: "staex_mcc_id".to_string(),
+            r#type: SERVICE_STAEX_MCC_ID.to_string(),
             data: cfg.attributes.staex_mcc_id.clone(),
             ..Default::default()
         },
     ];
     for mqtt_topic in &cfg.attributes.mqtt_topics {
         services.push(Service {
-            r#type: "mqtt_topic".to_string(),
+            r#type: SERVICE_MQTT_TOPIC.to_string(),
             data: mqtt_topic.clone(),
             ..Default::default()
         })
