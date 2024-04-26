@@ -1,6 +1,5 @@
 use std::{fmt::Debug, ops::Deref};
 
-use document::{Document, Service, VerificationMethod, VerificationType};
 use peaq_gen::api::{
     peaq_did,
     peaq_rbac::{self, calls::types::fetch_role::Entity},
@@ -34,6 +33,7 @@ use subxt_signer::sr25519::Keypair;
 mod document;
 
 pub use peaq_gen;
+pub use document::*;
 
 // We need custom error here to use it across threads.
 pub struct Error(String);

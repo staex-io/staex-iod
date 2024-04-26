@@ -17,4 +17,4 @@ prost = { version = "0.12.4", features = ["derive"], default-features = false }
 tokio = { workspace = true }
 
 [build-dependencies]
-prost-build = "*"
+prost-build = "0.12.4"
