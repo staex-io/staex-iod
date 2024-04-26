@@ -1,11 +1,13 @@
 use std::{fmt::Debug, ops::Deref};
 
+use document::{Document, Service, VerificationMethod, VerificationType};
 use peaq_gen::api::{
     peaq_did,
     peaq_rbac::{self, calls::types::fetch_role::Entity},
 };
-use rand::RngCore;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use prost::Message;
+use rand::{distributions::Alphanumeric, Rng, RngCore};
+use serde::{Deserialize, Serialize};
 use subxt::{
     backend::{
         legacy::{
@@ -28,6 +30,8 @@ use subxt::{
     OnlineClient, PolkadotConfig,
 };
 use subxt_signer::sr25519::Keypair;
+
+mod document;
 
 pub use peaq_gen;
 
@@ -247,7 +251,8 @@ pub struct DID<'a> {
 }
 
 impl<'a> DID<'a> {
-    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+    pub async fn add_attribute(&self, name: &str, doc: Document) -> Result<(), Error> {
+        let value = doc.encode_to_vec();
         let call = self.peaq_did_api.add_attribute(
             self.signer_client.address(),
             name.as_bytes().to_vec(),
@@ -258,14 +263,11 @@ impl<'a> DID<'a> {
         Ok(())
     }
 
-    pub async fn read_attribute<T>(
+    pub async fn read_attribute(
         &self,
         name: &str,
         address: AccountId32,
-    ) -> Result<Option<T>, Error>
-    where
-        T: DeserializeOwned,
-    {
+    ) -> Result<Option<Document>, Error> {
         let name = to_hex(name.as_bytes(), false);
         let latest_block = self.client.get_last_block().await?.block.header.hash();
         let result: Option<ReadAttributeResult> = self
@@ -278,11 +280,12 @@ impl<'a> DID<'a> {
             None => return Ok(None),
         };
         let value = from_hex(&result.value)?;
-        let data: T = serde_json::from_slice(&value)?;
-        Ok(Some(data))
+        let doc: Document = Document::decode(&*value)?;
+        Ok(Some(doc))
     }
 
-    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+    pub async fn update_attribute(&self, name: &str, doc: Document) -> Result<(), Error> {
+        let value = doc.encode_to_vec();
         let call = self.peaq_did_api.update_attribute(
             self.signer_client.address(),
             name.as_bytes().to_vec(),
@@ -423,6 +426,34 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
     Ok((phrase, keypair, account_id))
 }
 
+// You don't need to specify id for every service as we do it automatically.
+pub fn new_document(public_key: String, mut services: Vec<Service>) -> Document {
+    let id = format!("did:peaq:{}", generate_random_string(12));
+    // We create self-controlled DID.
+    let controller = id.clone();
+    let verification_methods = vec![VerificationMethod {
+        id: format!("{}#keys-1", id),
+        r#type: VerificationType::Ed25519VerificationKey2020.into(),
+        controller: controller.clone(),
+        public_key_multibase: public_key,
+    }];
+    for service in &mut services {
+        service.id = format!("{}#{}", id, service.r#type)
+    }
+    Document {
+        id,
+        controller: controller.clone(),
+        verification_methods,
+        signature: None,
+        services,
+        authentications: vec![controller],
+    }
+}
+
+fn generate_random_string(length: usize) -> String {
+    rand::thread_rng().sample_iter(&Alphanumeric).take(length).map(char::from).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -430,11 +461,13 @@ mod tests {
         time::SystemTime,
     };
 
-    use serde::{Deserialize, Serialize};
     use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
     use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
-    use crate::{Client, SignerClient};
+    use crate::{
+        document::{Document, Service},
+        new_document, Client, SignerClient,
+    };
 
     #[tokio::test]
     async fn get_token_information() {
@@ -473,25 +506,26 @@ mod tests {
         let client =
             SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
 
-        #[derive(Debug, Serialize, Deserialize)]
-        struct Info {
-            random_number: u8,
-        }
-
         let name = format!(
             "test_{}",
             SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         );
-        let random_number = rand::random();
-        let value = serde_json::to_vec(&Info { random_number }).unwrap();
-        client.did().add_attribute(&name, value).await.unwrap();
+        let random_number: u128 = rand::random();
+        let doc = new_document(
+            account_id.to_string(),
+            vec![Service {
+                r#type: "temperature".to_string(),
+                data: random_number.to_string(),
+                ..Default::default()
+            }],
+        );
+        client.did().add_attribute(&name, doc).await.unwrap();
 
-        let data: Option<Info> =
-            client.did().read_attribute(&name, account_id.clone()).await.unwrap();
-        assert_eq!(random_number, data.unwrap().random_number);
-
-        let data: Option<Info> = client.did().read_attribute("asd", account_id).await.unwrap();
-        assert!(data.is_none())
+        let data: Document =
+            client.did().read_attribute(&name, account_id.clone()).await.unwrap().unwrap();
+        assert_eq!(1, data.services.len());
+        assert_eq!("temperature", data.services[0].r#type);
+        assert_eq!(random_number.to_string(), data.services[0].data);
     }
 
     #[tokio::test]
