@@ -433,7 +433,7 @@ pub fn new_document(public_key: String, mut services: Vec<Service>) -> Document 
     let controller = id.clone();
     let verification_methods = vec![VerificationMethod {
         id: format!("{}#keys-1", id),
-        r#type: VerificationType::Ed25519VerificationKey2020.into(),
+        r#type: VerificationType::Sr25519VerificationKey2020.into(),
         controller: controller.clone(),
         public_key_multibase: public_key,
     }];
