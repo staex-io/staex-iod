@@ -5,7 +5,7 @@ use peaq_gen::api::{
     peaq_rbac::{self, calls::types::fetch_role::Entity},
 };
 use prost::Message;
-use rand::{distributions::Alphanumeric, Rng, RngCore};
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use subxt::{
     backend::{
@@ -32,8 +32,8 @@ use subxt_signer::sr25519::Keypair;
 
 mod document;
 
-pub use peaq_gen;
 pub use document::*;
+pub use peaq_gen;
 
 // We need custom error here to use it across threads.
 pub struct Error(String);
@@ -427,15 +427,16 @@ pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Err
 }
 
 // You don't need to specify id for every service as we do it automatically.
-pub fn new_document(public_key: String, mut services: Vec<Service>) -> Document {
-    let id = format!("did:peaq:{}", generate_random_string(12));
+pub fn new_document(account_id: AccountId32, mut services: Vec<Service>) -> Document {
+    let id = format!("did:peaq:{}", account_id);
     // We create self-controlled DID.
     let controller = id.clone();
+    let verification_method_id = format!("{}#keys-1", id);
     let verification_methods = vec![VerificationMethod {
-        id: format!("{}#keys-1", id),
+        id: verification_method_id.clone(),
         r#type: VerificationType::Sr25519VerificationKey2020.into(),
         controller: controller.clone(),
-        public_key_multibase: public_key,
+        public_key_multibase: account_id.to_string(),
     }];
     for service in &mut services {
         service.id = format!("{}#{}", id, service.r#type)
@@ -446,12 +447,8 @@ pub fn new_document(public_key: String, mut services: Vec<Service>) -> Document 
         verification_methods,
         signature: None,
         services,
-        authentications: vec![controller],
+        authentications: vec![verification_method_id],
     }
-}
-
-fn generate_random_string(length: usize) -> String {
-    rand::thread_rng().sample_iter(&Alphanumeric).take(length).map(char::from).collect()
 }
 
 #[cfg(test)]
@@ -512,7 +509,7 @@ mod tests {
         );
         let random_number: u128 = rand::random();
         let doc = new_document(
-            account_id.to_string(),
+            account_id.clone(),
             vec![Service {
                 r#type: "temperature".to_string(),
                 data: random_number.to_string(),
@@ -521,8 +518,7 @@ mod tests {
         );
         client.did().add_attribute(&name, doc).await.unwrap();
 
-        let data: Document =
-            client.did().read_attribute(&name, account_id.clone()).await.unwrap().unwrap();
+        let data: Document = client.did().read_attribute(&name, account_id).await.unwrap().unwrap();
         assert_eq!(1, data.services.len());
         assert_eq!("temperature", data.services[0].r#type);
         assert_eq!(random_number.to_string(), data.services[0].data);
