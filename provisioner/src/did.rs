@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use log::{debug, info, warn};
-use peaq_client::{new_document, Document, Service, SignerClient};
+use peaq_client::{new_did_document, Document, Service, SignerClient};
 use serde::{Deserialize, Serialize};
 use subxt::utils::AccountId32;
 use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
@@ -68,8 +68,8 @@ pub(crate) async fn update_client_info(
 ) -> Result<(), Error> {
     let keypair = Keypair::from_phrase(phrase, None)?;
     let peaq_client = peaq_client::SignerClient::new(rpc_url, keypair.clone()).await?;
-    let doc = new_document(
-        keypair.public_key().to_account_id(),
+    let doc = new_did_document(
+        &keypair,
         vec![Service {
             r#type: SERVICE_STAEX_MCC_ID.to_string(),
             data: staex_mcc_id,
@@ -102,20 +102,20 @@ pub(crate) async fn sync_did(
             info!("on-chain device is up to date");
             if cfg.force {
                 warn!("force sync is enabled; starting to sync it");
-                let doc = prepare_document(peaq_client.address(), cfg);
+                let doc = prepare_document(peaq_client.keypair(), cfg);
                 peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, doc).await?;
                 info!("successfully updated on-chain device");
             }
         }
         SyncState::Outdated => {
             info!("on-chain device is outdated; starting to sync it");
-            let doc = prepare_document(peaq_client.address(), cfg);
+            let doc = prepare_document(peaq_client.keypair(), cfg);
             peaq_client.did().update_attribute(DEVICE_ATTRIBUTE_NAME, doc).await?;
             info!("successfully updated on-chain device");
         }
         SyncState::NotCreated => {
             info!("on-chain device is not created");
-            let doc = prepare_document(peaq_client.address(), cfg);
+            let doc = prepare_document(peaq_client.keypair(), cfg);
             peaq_client.did().add_attribute(DEVICE_ATTRIBUTE_NAME, doc).await?;
             info!("successfully created on-chain device");
         }
@@ -223,7 +223,7 @@ fn get_sync_state(doc: Option<Document>, expected: &config::Device) -> SyncState
     }
 }
 
-fn prepare_document(account_id: AccountId32, cfg: &config::Device) -> Document {
+fn prepare_document(keypair: &Keypair, cfg: &config::Device) -> Document {
     let mut services = vec![
         Service {
             r#type: SERVICE_VERSION.to_string(),
@@ -272,5 +272,5 @@ fn prepare_document(account_id: AccountId32, cfg: &config::Device) -> Document {
             })
         }
     }
-    new_document(account_id, services)
+    new_did_document(keypair, services)
 }

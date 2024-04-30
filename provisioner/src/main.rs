@@ -3,7 +3,7 @@ use std::{str::FromStr, time::Duration};
 use clap::{Parser, Subcommand};
 use log::{debug, error, info, Level, LevelFilter};
 use peaq_client::generate_account;
-use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
+use subxt::utils::AccountId32;
 use subxt_signer::{
     bip39::{self, Mnemonic},
     sr25519::Keypair,
@@ -205,8 +205,7 @@ impl App {
 
     async fn faucet(&self, account_id: AccountId32) -> Result<(), Error> {
         let signer = get_keypair(&self.cfg.faucet.signer)?;
-        let faucet_account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&signer);
+        let faucet_account_id: AccountId32 = signer.public_key().to_account_id();
         let balance = self.peaq_client.get_balance(&faucet_account_id).await?;
         info!("faucet balance: {}: {}", faucet_account_id, balance,);
 

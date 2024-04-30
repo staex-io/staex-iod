@@ -225,8 +225,12 @@ impl SignerClient {
         }
     }
 
+    pub fn keypair(&self) -> &Keypair {
+        &self.keypair
+    }
+
     pub fn address(&self) -> AccountId32 {
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
+        self.keypair.public_key().to_account_id()
     }
 }
 
@@ -421,33 +425,31 @@ impl<'a> RBAC<'a> {
 pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Error> {
     let phrase = bip39::Mnemonic::generate(12)?;
     let keypair = Keypair::from_phrase(&phrase, None)?;
-    let account_id: AccountId32 =
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+    let account_id: AccountId32 = keypair.public_key().to_account_id();
     Ok((phrase, keypair, account_id))
 }
 
 // You don't need to specify id for every service as we do it automatically.
-pub fn new_document(account_id: AccountId32, mut services: Vec<Service>) -> Document {
+pub fn new_did_document(keypair: &Keypair, mut services: Vec<Service>) -> Document {
+    let account_id = keypair.public_key().to_account_id();
+    let public_key = to_hex(&keypair.public_key().0, false);
     let id = format!("did:peaq:{}", account_id);
-    // We create self-controlled DID.
-    let controller = id.clone();
-    let verification_method_id = format!("{}#keys-1", id);
     let verification_methods = vec![VerificationMethod {
-        id: verification_method_id.clone(),
+        id: public_key.clone(),
         r#type: VerificationType::Sr25519VerificationKey2020.into(),
-        controller: controller.clone(),
-        public_key_multibase: account_id.to_string(),
+        controller: id.clone(),
+        public_key_multibase: public_key.clone(),
     }];
     for service in &mut services {
         service.id = format!("{}#{}", id, service.r#type)
     }
     Document {
-        id,
-        controller: controller.clone(),
+        id: id.clone(),
+        controller: id,
         verification_methods,
         signature: None,
         services,
-        authentications: vec![verification_method_id],
+        authentications: vec![public_key],
     }
 }
 
@@ -458,12 +460,12 @@ mod tests {
         time::SystemTime,
     };
 
-    use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
+    use subxt::{ext::sp_core::bytes::to_hex, utils::AccountId32};
     use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
     use crate::{
         document::{Document, Service},
-        new_document, Client, SignerClient,
+        new_did_document, Client, SignerClient,
     };
 
     #[tokio::test]
@@ -488,8 +490,7 @@ mod tests {
     fn get_address_from_phrase() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         eprintln!("Account id {}", account_id)
     }
 
@@ -498,18 +499,17 @@ mod tests {
     async fn get_did_attribute() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         let client =
-            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair.clone()).await.unwrap();
 
         let name = format!(
             "test_{}",
             SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         );
         let random_number: u128 = rand::random();
-        let doc = new_document(
-            account_id.clone(),
+        let doc = new_did_document(
+            &keypair,
             vec![Service {
                 r#type: "temperature".to_string(),
                 data: random_number.to_string(),
@@ -529,8 +529,7 @@ mod tests {
     async fn get_owner_permissions() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         let client =
             SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
         let permissions = client.rbac().fetch_permissions(account_id).await.unwrap();
@@ -539,12 +538,34 @@ mod tests {
         }
     }
 
+    #[test]
+    #[ignore = "required mnemonic phrase"]
+    fn test_did_format() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+
+        eprintln!("Secret phrase: {}\n", phrase);
+        eprintln!("Public key (hex): {}\n", to_hex(&keypair.public_key().0, false));
+        eprintln!("Account ID: {}\n", to_hex(&keypair.public_key().0, false));
+        eprintln!("Public key (SS58): {}\n", keypair.public_key().to_account_id());
+        eprintln!("SS58 address: {}\n", keypair.public_key().to_account_id());
+
+        let document = new_did_document(
+            &keypair,
+            vec![Service {
+                r#type: "temperature".to_string(),
+                data: "celsius".to_string(),
+                ..Default::default()
+            }],
+        );
+        eprintln!("Document:\n\n{},", serde_json::to_string_pretty(&document).unwrap());
+    }
+
     #[tokio::test]
     #[ignore = "requires manually setup mnemonic phrase"]
     async fn test_rbac() {
         let keypair = Keypair::from_phrase(&Mnemonic::from_str("").unwrap(), None).unwrap();
-        let owner: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let owner: AccountId32 = keypair.public_key().to_account_id();
 
         let user_id = [
             122, 190, 82, 250, 244, 222, 128, 103, 71, 215, 50, 122, 3, 178, 251, 167, 35, 47, 138,
