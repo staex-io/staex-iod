@@ -4,8 +4,9 @@ use peaq_gen::api::{
     peaq_did,
     peaq_rbac::{self, calls::types::fetch_role::Entity},
 };
+use prost::Message;
 use rand::RngCore;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use subxt::{
     backend::{
         legacy::{
@@ -29,6 +30,9 @@ use subxt::{
 };
 use subxt_signer::sr25519::Keypair;
 
+mod document;
+
+pub use document::*;
 pub use peaq_gen;
 
 // We need custom error here to use it across threads.
@@ -221,8 +225,12 @@ impl SignerClient {
         }
     }
 
+    pub fn keypair(&self) -> &Keypair {
+        &self.keypair
+    }
+
     pub fn address(&self) -> AccountId32 {
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&self.keypair)
+        self.keypair.public_key().to_account_id()
     }
 }
 
@@ -247,7 +255,8 @@ pub struct DID<'a> {
 }
 
 impl<'a> DID<'a> {
-    pub async fn add_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+    pub async fn add_attribute(&self, name: &str, doc: Document) -> Result<(), Error> {
+        let value = doc.encode_to_vec();
         let call = self.peaq_did_api.add_attribute(
             self.signer_client.address(),
             name.as_bytes().to_vec(),
@@ -258,14 +267,11 @@ impl<'a> DID<'a> {
         Ok(())
     }
 
-    pub async fn read_attribute<T>(
+    pub async fn read_attribute(
         &self,
         name: &str,
         address: AccountId32,
-    ) -> Result<Option<T>, Error>
-    where
-        T: DeserializeOwned,
-    {
+    ) -> Result<Option<Document>, Error> {
         let name = to_hex(name.as_bytes(), false);
         let latest_block = self.client.get_last_block().await?.block.header.hash();
         let result: Option<ReadAttributeResult> = self
@@ -278,11 +284,12 @@ impl<'a> DID<'a> {
             None => return Ok(None),
         };
         let value = from_hex(&result.value)?;
-        let data: T = serde_json::from_slice(&value)?;
-        Ok(Some(data))
+        let doc: Document = Document::decode(&*value)?;
+        Ok(Some(doc))
     }
 
-    pub async fn update_attribute(&self, name: &str, value: Vec<u8>) -> Result<(), Error> {
+    pub async fn update_attribute(&self, name: &str, doc: Document) -> Result<(), Error> {
+        let value = doc.encode_to_vec();
         let call = self.peaq_did_api.update_attribute(
             self.signer_client.address(),
             name.as_bytes().to_vec(),
@@ -418,9 +425,32 @@ impl<'a> RBAC<'a> {
 pub fn generate_account() -> Result<(bip39::Mnemonic, Keypair, AccountId32), Error> {
     let phrase = bip39::Mnemonic::generate(12)?;
     let keypair = Keypair::from_phrase(&phrase, None)?;
-    let account_id: AccountId32 =
-        <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+    let account_id: AccountId32 = keypair.public_key().to_account_id();
     Ok((phrase, keypair, account_id))
+}
+
+// You don't need to specify id for every service as we do it automatically.
+pub fn new_did_document(keypair: &Keypair, mut services: Vec<Service>) -> Document {
+    let account_id = keypair.public_key().to_account_id();
+    let public_key = to_hex(&keypair.public_key().0, false);
+    let id = format!("did:peaq:{}", account_id);
+    let verification_methods = vec![VerificationMethod {
+        id: public_key.clone(),
+        r#type: VerificationType::Sr25519VerificationKey2020.into(),
+        controller: id.clone(),
+        public_key_multibase: public_key.clone(),
+    }];
+    for service in &mut services {
+        service.id = format!("{}#{}", id, service.r#type)
+    }
+    Document {
+        id: id.clone(),
+        controller: id,
+        verification_methods,
+        signature: None,
+        services,
+        authentications: vec![public_key],
+    }
 }
 
 #[cfg(test)]
@@ -430,11 +460,13 @@ mod tests {
         time::SystemTime,
     };
 
-    use serde::{Deserialize, Serialize};
-    use subxt::{tx::Signer, utils::AccountId32, PolkadotConfig};
+    use subxt::{ext::sp_core::bytes::to_hex, utils::AccountId32};
     use subxt_signer::{bip39::Mnemonic, sr25519::Keypair};
 
-    use crate::{Client, SignerClient};
+    use crate::{
+        document::{Document, Service},
+        new_did_document, Client, SignerClient,
+    };
 
     #[tokio::test]
     async fn get_token_information() {
@@ -458,8 +490,7 @@ mod tests {
     fn get_address_from_phrase() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         eprintln!("Account id {}", account_id)
     }
 
@@ -468,30 +499,29 @@ mod tests {
     async fn get_did_attribute() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         let client =
-            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
-
-        #[derive(Debug, Serialize, Deserialize)]
-        struct Info {
-            random_number: u8,
-        }
+            SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair.clone()).await.unwrap();
 
         let name = format!(
             "test_{}",
             SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
         );
-        let random_number = rand::random();
-        let value = serde_json::to_vec(&Info { random_number }).unwrap();
-        client.did().add_attribute(&name, value).await.unwrap();
+        let random_number: u128 = rand::random();
+        let doc = new_did_document(
+            &keypair,
+            vec![Service {
+                r#type: "temperature".to_string(),
+                data: random_number.to_string(),
+                ..Default::default()
+            }],
+        );
+        client.did().add_attribute(&name, doc).await.unwrap();
 
-        let data: Option<Info> =
-            client.did().read_attribute(&name, account_id.clone()).await.unwrap();
-        assert_eq!(random_number, data.unwrap().random_number);
-
-        let data: Option<Info> = client.did().read_attribute("asd", account_id).await.unwrap();
-        assert!(data.is_none())
+        let data: Document = client.did().read_attribute(&name, account_id).await.unwrap().unwrap();
+        assert_eq!(1, data.services.len());
+        assert_eq!("temperature", data.services[0].r#type);
+        assert_eq!(random_number.to_string(), data.services[0].data);
     }
 
     #[tokio::test]
@@ -499,8 +529,7 @@ mod tests {
     async fn get_owner_permissions() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let account_id: AccountId32 = keypair.public_key().to_account_id();
         let client =
             SignerClient::new("wss://rpcpc1-qa.agung.peaq.network", keypair).await.unwrap();
         let permissions = client.rbac().fetch_permissions(account_id).await.unwrap();
@@ -509,12 +538,34 @@ mod tests {
         }
     }
 
+    #[test]
+    #[ignore = "required mnemonic phrase"]
+    fn test_did_format() {
+        let phrase = bip39::Mnemonic::parse("").unwrap();
+        let keypair = Keypair::from_phrase(&phrase, None).unwrap();
+
+        eprintln!("Secret phrase: {}\n", phrase);
+        eprintln!("Public key (hex): {}\n", to_hex(&keypair.public_key().0, false));
+        eprintln!("Account ID: {}\n", to_hex(&keypair.public_key().0, false));
+        eprintln!("Public key (SS58): {}\n", keypair.public_key().to_account_id());
+        eprintln!("SS58 address: {}\n", keypair.public_key().to_account_id());
+
+        let document = new_did_document(
+            &keypair,
+            vec![Service {
+                r#type: "temperature".to_string(),
+                data: "celsius".to_string(),
+                ..Default::default()
+            }],
+        );
+        eprintln!("Document:\n\n{},", serde_json::to_string_pretty(&document).unwrap());
+    }
+
     #[tokio::test]
     #[ignore = "requires manually setup mnemonic phrase"]
     async fn test_rbac() {
         let keypair = Keypair::from_phrase(&Mnemonic::from_str("").unwrap(), None).unwrap();
-        let owner: AccountId32 =
-            <subxt_signer::sr25519::Keypair as Signer<PolkadotConfig>>::account_id(&keypair);
+        let owner: AccountId32 = keypair.public_key().to_account_id();
 
         let user_id = [
             122, 190, 82, 250, 244, 222, 128, 103, 71, 215, 50, 122, 3, 178, 251, 167, 35, 47, 138,
