@@ -37,7 +37,7 @@ struct Cli {
     config: String,
     /// Set RPC URL for PEAQ network.
     #[arg(short, long)]
-    #[arg(default_value = "wss://rpcpc1-qa.agung.peaq.network")]
+    #[arg(default_value = "wss://mpfn1.peaq.network")]
     rpc_url: String,
     #[clap(subcommand)]
     command: Commands,

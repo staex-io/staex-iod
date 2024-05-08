@@ -54,7 +54,7 @@ cargo run -- config
 
 ```toml
 log_level = "DEBUG"
-rpc_url = "wss://rpcpc1-qa.agung.peaq.network"
+rpc_url = "wss://mpfn1.peaq.network"
 
 [signer]
 typ = "SecretUri"
