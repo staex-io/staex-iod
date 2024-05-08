@@ -19,7 +19,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             log_level: Level::Debug.to_string(),
-            rpc_url: "wss://rpcpc1-qa.agung.peaq.network".to_string(),
+            rpc_url: "wss://mpfn1.peaq.network".to_string(),
             signer: Default::default(),
             faucet: Default::default(),
             device: Default::default(),

@@ -485,13 +485,22 @@ mod tests {
         eprintln!("Latest block is {}", client.get_last_block().await.unwrap().block.header.number)
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore = "run it manually to set phrase"]
-    fn get_address_from_phrase() {
+    async fn get_address_from_phrase() {
         let phrase = bip39::Mnemonic::parse("").unwrap();
         let keypair = Keypair::from_phrase(&phrase, None).unwrap();
-        let account_id: AccountId32 = keypair.public_key().to_account_id();
-        eprintln!("Account id {}", account_id)
+
+        eprintln!("\nSecret phrase: {}", phrase);
+        eprintln!("Public key (hex): {}", to_hex(&keypair.public_key().0, false));
+        eprintln!("Account ID: {}", to_hex(&keypair.public_key().0, false));
+        eprintln!("Public key (SS58): {}", keypair.public_key().to_account_id());
+        eprintln!("SS58 address: {}", keypair.public_key().to_account_id());
+
+        let client = SignerClient::new("wss://mpfn1.peaq.network", keypair.clone()).await.unwrap();
+
+        let balance = client.get_balance(&keypair.public_key().to_account_id()).await.unwrap();
+        eprintln!("Balance: {balance}\n");
     }
 
     #[tokio::test]
